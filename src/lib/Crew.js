@@ -1,79 +1,129 @@
-import Game from './Game';
+/* eslint-disable no-restricted-globals */
+import App from './App';
 
 export default class Crew {
-	constructor() {
-		this.crewCode = ''; // string
-		this.inGame = false;
-		this.moderator = false; // string
-		this.crewMembers = [];
-		this.moderatorEmblem = 'shield-alt-solid';
+	constructor(crewCode) {
+		this.crewCode = crewCode;
+		App.localStorage.setItem('crewCode', crewCode);
 	}
 
-	/**
-	 * @description returns if the player is moderator of the crew
-	 */
-	playerIsModerator() {
-		return this.moderator;
+	async loadMembers() {
+		const crewDoc = await App.firebase.getQuery(['crews', this.crewCode], ['members']).get();
+		this.members = {};
+		crewDoc.forEach((doc) => {
+			const userId = doc.id;
+			this.members[userId] = {
+				lon: doc.data().lon,
+				lat: doc.data().lat,
+			};
+		});
 	}
 
-	// crew modification methods
-
-	/**
-	 * @description Resets the parameters of the crew object
-	 */
-	resetParams() {
-		this.crewCode = '';
-		this.inGame = false;
-		this.moderator = false;
-		this.crewMembers = [];
+	async loadSettings() {
+		const crewDoc = await App.firebase.getQuery(['crews', this.crewCode]).get();
+		const { gameSettings } = crewDoc.data();
+		this.gameSettings = gameSettings;
 	}
 
-	/**
-	 * @description sets the crewcode to the specified value (bool)
-	 * @param {*} code bool
-	 */
-	setCrewCode(code) {
-		this.crewCode = code;
+	async loadTaggers() {
+		const crewDoc = await App.firebase.getQuery(['crews', this.crewCode]).get();
+		const { taggers, previousTaggers } = crewDoc.data();
+		this.taggers = taggers;
+		this.previousTaggers = previousTaggers;
 	}
 
-	/**
-	 * @description sets if the player is moderator of this crew
-	 * @param {*} bool
-	 */
-	setPlayerModerator(bool) {
-		this.moderator = bool;
+	setSettings(duration, radius, gameMode) {
+		this.gameSettings.duration = (!isNaN(duration)) ? duration : this.gameSettings.duration;
+		this.gameSettings.radius = (!isNaN(radius)) ? radius : this.gameSettings.radius;
+		this.gameSettings.gameMode = (typeof gameMode === 'string') ? gameMode : this.gameSettings.gameMode;
 	}
 
-	/**
-	 * @description resets all parameters of this crew
-	 */
-	resetCrew() {
-		this.crewCode = undefined; // string
-		this.inGame = false;
-		this.moderator = undefined; // string
-		this.crewMembers = [];
+	getSettings() {
+		return this.gameSettings;
 	}
 
-	/**
-	 * @description fills in paramaters of this crew by the specified values
-	 * @param {*} crewCode
-	 * @param {*} moderator is the player moderator of this crew true/false
-	 * @param {*} crewMembers array of crewmamber of this crew
-	 */
-	loadCrew(crewCode, moderator, crewMembers) {
-		this.crewCode = crewCode; // string
-		this.inGame = false;
-		this.moderator = moderator; // string
-		this.crewMembers = crewMembers;
+	getMemberIds() {
+		return Object.keys(this.members);
 	}
 
-	// crew actions
-	/**
-	 * @description sets inGame parameter of crew to true
-	 */
-	startGame() {
-		if (Game.isSet) {
-			this.inGame = true;
-		}
+	getMembers() {
+		return this.members;
+	}
+
+	getTaggers() {
+		return this.taggers;
+	}
+
+	getPreviousTaggers() {
+		return this.previousTaggers;
+	}
+
+	isInGame() {
+		return this.gameSettings.inGame;
+	}
+
+	getStartDate() {
+		return this.gameSettings.startDate;
+	}
+
+	getDuration() {
+		return this.gameSettings.duration;
+	}
+
+	async getModerator() {
+		const moderatorDoc = await App.firebase.getQuery(['crews', this.crewCode]).get();
+		const { moderator } = moderatorDoc.data();
+		return moderator;
+	}
+
+	async deleteFromDB() {
+		// delete all data in members
+		const members = await App.firebase.getDocIds(['crews', this.crewCode], ['members']);
+		members.forEach(async (member) => {
+			await App.firebase.getQuery(['crews', this.crewCode], ['members', member]).delete();
+		});
+		// delete crewDoc
+		await App.firebase.getQuery(['crews', this.crewCode]).delete();
+	}
+
+	async assignNewModerator() {
+		const members = await this.getMemberIds();
+		const randomIndex = Math.floor(Math.random() * members.length);
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			moderator: members[randomIndex],
+		});
+	}
+
+	assignRandomTagger() {
+		const members = this.getMemberIds();
+		const { length } = members;
+		const randomIndex = Math.floor(Math.random() * length);
+		this.taggers = [members[randomIndex]];
+	}
+
+	async startGame(centerPoint) {
+		// start game locally
+		this.gameSettings.inGame = true;
+		this.gameSettings.centerPoint = centerPoint;
+		this.gameSettings.startDate = new Date();
+		this.assignRandomTagger();
+		// upload settings
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			gameSettings: this.getSettings(),
+			taggers: this.getTaggers(),
+		});
+	}
+
+	async stopGame() {
+		// stop game locally
+		this.gameSettings.inGame = false;
+		this.taggers = [];
+		this.previousTaggers = [];
+		// upload settings
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			gameSettings: this.getSettings(),
+			taggers: this.getTaggers(),
+			previousTaggers: this.getPreviousTaggers(),
+		});
 	}
 }

@@ -32,4 +32,8 @@ export default class Storage {
 	setItem(key, value) {
 		this.localStorage.setItem(key, value);
 	}
+
+	removeItem(key) {
+		this.localStorage.removeItem(key);
+	}
 }

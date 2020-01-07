@@ -1,13 +1,14 @@
-<div class="a-back-icon" style="background-image: url(../../assets/icons/fontawesome/chevron-left-solid.svg); width: 20px; height:20px; background-size: cover;"></div>
-<h1 class="a-h1" id="btn">Your space crew</h1>
-<div class="m-navbar">
-	<div class="a-navbar__invite " id={{navIdInvite}}>Invite Friends</div>
-	<div class="a-navbar__overview" id={{navIdOverview}}>Crew Overview</div>
-	<div class="a-navbar__settings a-navbar__settings--active" id={{navIdSettings}}>Gameplay</div>
-</div>
-{{#with data}}
-{{> settingsScreen }}
-{{/with}}
-<div class="m-playButton" id="{{ playBtnId }}">
-	<div class="a-leave-icon"  style="background-image: url(../../assets/icons/fontawesome/{{playBtnIcon}}.svg); width: 64px; height:64px; background-size: cover;"></div>
+<div class="o-app-container"><div class="a-back-icon" id="{{backBtnId}}" style="background-image: url(../../assets/icons/fontawesome/chevron-left-solid.svg); width: 20px; height:20px; background-size: cover;"></div>
+	<h1 class="a-h1" id="btn">Your space crew</h1>
+	<div class="m-navbar">
+		<div class="a-navbar__invite " id={{navIdInvite}}>Invite Friends</div>
+		<div class="a-navbar__overview" id={{navIdOverview}}>Crew Overview</div>
+		<div class="a-navbar__settings a-navbar__settings--active" id={{navIdSettings}}>Gameplay</div>
+	</div>
+	{{#with data}}
+	{{> settingsScreen }}
+	{{/with}}
+	<div class="m-playButton" id="{{ playBtnId }}">
+		<div class="a-leave-icon"  style="background-image: url(../../assets/icons/fontawesome/{{playBtnIcon}}.svg); width: 64px; height:64px; background-size: cover;"></div>
+	</div>
 </div>

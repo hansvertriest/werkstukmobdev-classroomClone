@@ -3,6 +3,7 @@ import './styles/styles.scss';
 import * as consts from './consts';
 import App from './lib/App';
 import routes from './routes';
+import Player from './lib/Player';
 
 /**
  * This function will initialize our app
@@ -28,6 +29,9 @@ const initApp = () => {
 			messagingSenderId: consts.FIREBASE_MESSAGING_SENDER_ID,
 		});
 	}
+
+	// 3. init localstorage
+	App.initLocalStorage();
 };
 
 /**
@@ -40,15 +44,27 @@ const initRoutes = () => {
 /**
  * When we are ready to go, init the app, routes and navigate to default route
  */
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
 	// init the app
 	initApp();
 
-	// init the routes
-	initRoutes();
 
-	// route to the requested location (or default)
-	let requestedPage = window.location.hash.split('/')[1];
-	requestedPage = (requestedPage === null || typeof (requestedPage) === 'undefined') ? `/${consts.ROUTER_DEFAULT_PAGE}` : `/${requestedPage}`;
-	App.router.navigate(requestedPage);
+	// check user
+	App.firebase.getAuth().onAuthStateChanged(async (user) => {
+		if (!user) {
+			// init the routes
+			initRoutes();
+			App.router.navigate('/login');
+		} else {
+			await Player.load(user.uid, true);
+			console.log(`USER: ${user.uid}`);
+			// init the routes
+			initRoutes();
+
+			// route to the requested location (or default)
+			let requestedPage = window.location.hash.split('/')[1];
+			requestedPage = (requestedPage === null || typeof (requestedPage) === 'undefined') ? `/${consts.ROUTER_DEFAULT_PAGE}` : `/${requestedPage}`;
+			App.router.navigate(requestedPage);
+		}
+	});
 });

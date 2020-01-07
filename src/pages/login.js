@@ -1,10 +1,9 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
-import Page from '../lib/Page';
+import listener from '../lib/Listener';
 
 const loginTemplate = require('../templates/login.hbs');
 
-const pageScript = () => {
+export default async () => {
 	/* DOM variables	*/
 	const emailFieldId = 'emailField';
 	const passwordFieldId = 'passwordField';
@@ -22,12 +21,15 @@ const pageScript = () => {
 
 	/* Event listeners */
 	// login
-	EventController.addClickListener(submitBtnId, () => {
+	listener.onClick(submitBtnId, () => {
 		const email = document.getElementById(emailFieldId).value;
 		const password = document.getElementById(passwordFieldId).value;
 		App._firebase.getAuth().signInWithEmailAndPassword(email, password)
-			.then(() => {
-				App.router.navigate('/home');
+			.then(async () => {
+				const user = await App.firebase.getAuth().getCurrentUser;
+				if (user) {
+					App.router.navigate('/home');
+				}
 			})
 			.catch((error) => {
 				console.log(error.message);
@@ -36,22 +38,16 @@ const pageScript = () => {
 	});
 
 	// google btn
-	EventController.addClickListener(googleBtnId, () => {
+	listener.onClick(googleBtnId, () => {
 		App._firebase.getAuth().signInWithPopup(App._firebase.getProvider())
-			.then(() => {
-				App.router.navigate('/home');
+			.then((user) => {
+				if (user) {
+					App.router.navigate('/home');
+				}
 			}).catch((error) => {
 				console.log(error.message);
 				document.getElementById(errorContainerId).innerText = error.message;
 			});
 	});
-};
-
-export default async () => {
-	const currentPage = '/login';
-	const init = await Page.initPage(currentPage);
-	if (init === currentPage) {
-		pageScript();
-	}
-	App.router.navigate(init);
+	App.router.navigate('/login');
 };

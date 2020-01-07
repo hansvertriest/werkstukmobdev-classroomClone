@@ -1,12 +1,22 @@
-{{#with data }}
-<h1>{{crewCode}}</h1>
-<ul class="m-member-list">
-{{#members}}
-<li class="m-member-list__member">
-	<div class="a-avatar__pic" style="background-image: url(../../assets/images/avatar/{{avatar}}_64.png); width: 64px; height:64px; background-size: cover;"></div>
-	<p class="a-member__screenName">{{screenName}}</p>
-</li>
-{{/members}}
-</ul>
-{{/with}}
-<button class="a-backend__button" id="{{addUserBtnId}}">Add user</button>
+<div class="o-app-container">
+	{{#with data }}
+	<h1>{{crewCode}}</h1>
+	{{/with}}
+	<p>{{status}}</p>
+	{{#with data }}
+	<ul class="m-member-list">
+	{{#members}}
+	<li class="m-member-list__member">
+		<div class="a-avatar__pic" style="background-image: url(../../assets/images/avatar/{{avatar}}_64.png); width: 64px; height:64px; background-size: cover;"></div>
+		<p class="a-member__screenName">{{screenName}}</p>
+		<button id="a-delete-{{userId}}">X</button>
+		<button id="a-addTagger-{{userId}}">set tagger</button>
+	</li>
+	{{/members}}
+	</ul>
+	{{/with}}
+	<button class="a-backend__button" id="{{addUserBtnId}}">Add user</button>
+	<button class="a-backend__button" id="{{forceStartButtonId}}">{{startStopInnerText}}</button>
+	<button class="a-backend__button" id="{{simulateGameId}}">Simulate game</button>
+	<button class="a-map-btn" id="{{mapBtnId}}">Go to map</button>
+</div>

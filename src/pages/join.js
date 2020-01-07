@@ -1,68 +1,56 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
-import Page from '../lib/Page';
+import Listener from '../lib/Listener';
 import Player from '../lib/Player';
-import DataUploader from '../lib/DataUploader';
+import Page from '../lib/Page';
 
 const joinTemplate = require('../templates/join.hbs');
 
-const pageScript = (data) => {
+export default async () => {
 	/* DOM variables */
 	const joinBtnId = 'joinBtn';
 	const codeFieldId = 'codeField';
 	const backBtnId = 'backBtn';
+	const errorContainerId = 'errorContainer';
 
-	App.render(joinTemplate({ joinBtnId, codeFieldId, backBtnId }));
+	App.render(joinTemplate({
+		joinBtnId,
+		codeFieldId,
+		backBtnId,
+		errorContainerId,
+	}));
 	App.router.navigate('/join');
 
-	/* Event listeners */
+	/*
+		Listeners
+	*/
 
-	// Join crew
-	EventController.addClickListener(joinBtnId, () => {
-		const crewCode = document.getElementById(codeFieldId).value;
-		// check if crew exists
-		if (data.crewCodes.includes(crewCode)) {
-			DataUploader.joinCrew(crewCode);
+	// join crew
+	Listener.onClick(joinBtnId, async () => {
+		// check if given crew exists
+		const crews = await App.firebase.getDocIds(['crews']);
+		const crewToJoin = document.getElementById(codeFieldId).value;
+		if (Player.crewExists() && Player.getCrewCode() === crewToJoin) {
+			Page.goTo('createOverview');
+		} else if (crews.includes(crewToJoin)) {
+			await Player.joinCrew(crewToJoin);
+			Page.goTo('crewOverview');
+		} else {
+			document.getElementById(errorContainerId).innerText = 'Could not find crew!';
 		}
 	});
 
+
 	// Go back
-	EventController.addClickListener(backBtnId, () => {
-		App.router.navigate(Page.lastPage);
+	Listener.onClick(backBtnId, () => {
+		Page.goTo('home');
 	});
-};
 
-/**
- * @description Collects the data necessary for this page
- */
-const collectData = async () => {
-	const crewCodesFetch = await App.firebase.db.collection('crews').get()
-		.then((doc) => {
-			const crewCodes = doc.docs.map((document) => document.id);
-			return { crewCodes };
-		})
-		.catch((error) => {
-			console.log(error);
-			return null;
-		});
-	return crewCodesFetch;
-};
-
-export default async () => {
-	const currentPage = '/join';
-	const init = await Page.initPage(currentPage);
-	if (init === currentPage) {
-		// listen if user has succesfully joined
-		const joinedListener = App.firebase.db.collection('users').doc(Player.userId).onSnapshot((doc) => {
-			const dataDoc = doc.data();
-			if (dataDoc.crewCode !== '') {
-				Player.joinCrew(dataDoc.crewCode);
-				joinedListener();
-				App.router.navigate('/crewOverview');
-			}
-		});
-		const data = await collectData();
-		pageScript(data);
+	/*
+		Check for rerouting
+	*/
+	if (Player.crewExists()) {
+		if (await Player.crew.getModerator() !== Player.getUserId()) {
+			Page.goTo('crewOverview');
+		}
 	}
-	App.router.navigate(init);
 };

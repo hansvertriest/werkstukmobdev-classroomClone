@@ -1,10 +1,23 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
+import Listener from '../lib/Listener';
 import Backend from '../lib/Backend';
 
 const backCrewListTemplate = require('../templates/backCrewList.hbs');
 
-const pageScript = (data) => {
+export default async () => {
+	/*
+		Data
+	*/
+
+	const crewsDocs = await App.firebase.getQuery(['crews']).get();
+	const crewArray = [];
+	crewsDocs.forEach((crew) => {
+		crewArray.push({ crewCode: crew.id });
+	});
+	const data = {
+		crews: crewArray,
+	};
+
 	// Dom variables
 	const deleteFictionalUsersBtnId = 'deleteFictionalUsersBtn';
 	App.render(backCrewListTemplate({
@@ -14,29 +27,13 @@ const pageScript = (data) => {
 
 	// eventListeners
 	data.crews.forEach((crew) => {
-		EventController.addClickListener(crew.crewCode, () => {
-			Backend.crewCode = crew.crewCode;
+		Listener.onClick(crew.crewCode, () => {
+			Backend.setCrewCode(crew.crewCode);
 			App.router.navigate('/backCrewDetail');
 		});
 	});
-	EventController.addClickListener(deleteFictionalUsersBtnId, () => {
+	Listener.onClick(deleteFictionalUsersBtnId, () => {
 		Backend.deleteFictionalusers();
 	});
-};
-/**
- * @description Collects the data necessary for this page
- */
-const collectData = async () => {
-	const crewsDocs = await App.firebase.db.collection('crews').get();
-	const crewArray = [];
-	crewsDocs.forEach((crew) => {
-		crewArray.push({ crewCode: crew.id });
-	});
-	return { crews: crewArray };
-};
-
-export default async () => {
-	const data = await collectData();
-	pageScript(data);
 	App.router.navigate('/backCrewList');
 };

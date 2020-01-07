@@ -1,10 +1,21 @@
 class EventController {
-	addClickListener(elementId, callback) {
+	/*
+		event listeners
+	*/
+	onClick(elementId, callback) {
 		return document.getElementById(elementId).addEventListener('click', callback);
 	}
 
-	removeClickListener(elementId) {
+	removeClick(elementId) {
 		document.getElementById(elementId).removeEventListener('click');
+	}
+
+	/*
+		firebase onsnapshot
+	*/
+
+	onSnapshot(query, callback) {
+		return query.onSnapshot(callback);
 	}
 }
 export default new EventController();

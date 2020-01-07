@@ -3,7 +3,7 @@
 	<div class="o-game-duration">
 		<p class="a-settingTitle">Game Duration</p>
 		<div class="m-game-duration__input">
-			<input type="text" class="a-input__field" placeholder="{{duration}}">
+			<input type="text" class="a-input__field" id="durationField" placeholder="{{duration}}">
 			<p class="a-input__suffix">min</p>
 		</div>
 	</div>
@@ -12,15 +12,15 @@
 		<p class="a-game-zone__setting-description">The game zone is defined by a circle around your current position.</p>
 		<div class="m-game-zone__input">
 			<p class="a-input__title">raduis</p>
-			<input type="text" class="a-input__field" placeholder="{{radius}}">
+			<input type="text" class="a-input__field" id="radiusField" placeholder="{{radius}}">
 			<p class="a-input__suffix">meter</p>
 		</div>
 	</div>
 	<div class="o-game-mode">
 		<p class="a-settingTitle">Game Mode</p>
 		<div class="m-game-mode__button-container">
-			<button class="a-button-container__button {{modifierParasite}}">parasite mode</button>
-			<button class="a-button-container__button {{modifierPlague}}">plague mode</button>
+			<button class="a-button-container__button {{modifierParasite}}" id="parasiteBtn">parasite mode</button>
+			<button class="a-button-container__button {{modifierPlague}}"  id="plagueBtn">plague mode</button>
 		</div>
 		<p class="a-game-mode__setting-description">{{ description }}</p>
 	</div>

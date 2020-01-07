@@ -1,11 +1,16 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
-import Page from '../lib/Page';
+import Listener from '../lib/Listener';
 import Player from '../lib/Player';
+import Page from '../lib/Page';
 
 const homeTemplate = require('../templates/home.hbs');
 
-const pageScript = (data) => {
+export default () => {
+	/* page data */
+	const data = {
+		screenName: Player.getScreenName(),
+		avatar: Player.getAvatar(),
+	};
 	/* DOM variables */
 	const joinBtnId = 'joinBtn';
 	const createBtnId = 'createBtn';
@@ -21,44 +26,24 @@ const pageScript = (data) => {
 	/* Event listeners */
 
 	// logout
-	EventController.addClickListener(logOutBtnId, () => {
-		App._firebase.getAuth().signOut().then(() => {
-			Page.resetModel();
-			App.router.navigate('/login');
+	Listener.onClick(logOutBtnId, () => {
+		App._firebase.getAuth().signOut().then(async () => {
+			Player.logOut();
+			Page.goTo('login');
 		}, (error) => {
 			console.log(error);
 		});
 	});
 
 	// Go to join page
-	EventController.addClickListener(joinBtnId, () => {
-		App.router.navigate('/join');
+	Listener.onClick(joinBtnId, () => {
+		Page.goTo('join');
 	});
 
 	// Go to create page
-	EventController.addClickListener(createBtnId, () => {
-		App.router.navigate('/createInvite');
+	Listener.onClick(createBtnId, () => {
+		Page.goTo('createInvite');
 	});
-};
 
-/**
- * @description Collects the data necessary for this page
- */
-const collectData = async () => {
-	const doc = await App.firebase.db.collection('users').doc(Player.userId).get()
-		.then((result) => result)
-		.catch((error) => {
-			console.log(error);
-		});
-	return doc.data();
-};
-
-export default async () => {
-	const currentPage = '/home';
-	const init = await Page.initPage(currentPage);
-	if (init === currentPage) {
-		const doc = await collectData();
-		pageScript(doc);
-	}
-	App.router.navigate(init);
+	App.router.navigate('/home');
 };

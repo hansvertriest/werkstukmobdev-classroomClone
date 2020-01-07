@@ -1,10 +1,10 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
-import Page from '../lib/Page';
+import Listener from '../lib/Listener';
+import Player from '../lib/Player';
 
 const registerAvatarTemplate = require('../templates/registerAvatar.hbs');
 
-const pageScript = () => {
+export default () => {
 	/* Page data */
 	const avatars = ['astro1', 'astro2'];
 	let avatarIndex = 0;
@@ -25,36 +25,23 @@ const pageScript = () => {
 
 	/* Event listeners */
 
-	EventController.addClickListener(goLeftBtnId, () => {
+	Listener.onClick(goLeftBtnId, () => {
 		avatarIndex = (avatarIndex === 0) ? avatars.length - 1 : avatarIndex - 1;
 		avatar = avatars[avatarIndex];
 		document.getElementById('avatarDiv').style.backgroundImage = `url(../../assets/images/avatar/${avatar}_128.png)`;
 	});
 
-	EventController.addClickListener(goRightBtnId, () => {
+	Listener.onClick(goRightBtnId, () => {
 		avatarIndex = (avatarIndex + 1 === avatars.length) ? 0 : avatarIndex + 1;
 		avatar = avatars[avatarIndex];
 		document.getElementById('avatarDiv').style.backgroundImage = `url(../../assets/images/avatar/${avatar}_128.png)`;
 	});
 
 	// Register avatar
-	EventController.addClickListener(chooseBtnId, () => {
+	Listener.onClick(chooseBtnId, () => {
 		// Add to database
-		const userUID = App.firebase.getAuth().currentUser.uid;
-		App.firebase.db.collection('users').doc(userUID).set({
-			avatar,
-		}, { merge: true })
-			.catch((e) => {
-				console.log(e);
-			});
+		Player.registerAvatar(avatar);
 		App.router.navigate('/home');
 	});
-};
-
-export default async () => {
-	const currentPage = '/registerAvatar';
-	const init = await Page.initPage('/registerAvatar');
-	if (init === currentPage) {
-		pageScript();
-	}
+	App.router.navigate('/registerAvatar');
 };

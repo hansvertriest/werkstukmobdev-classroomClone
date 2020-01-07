@@ -1,7 +1,9 @@
-<h1 class="a-h1" id="btn">Your space crew</h1>
-{{#with data}}
-{{> crewListScreen crew=crew }}
-{{/with}}
-<div class="m-leaveButton" id="{{ leaveBtnId }}">
-	<div class="a-leave-icon" style="background-image: url(../../assets/icons/fontawesome/play-solid.svg); width: 64px; height:64px; background-size: cover;"></div>
+<div class="o-app-container">
+	<h1 class="a-h1" id="btn">Your space crew</h1>
+	{{#with data}}
+	{{> crewListScreen crew=crew }}
+	{{/with}}
+	<div class="m-leaveButton" id="{{ leaveBtnId }}">
+		<div class="a-leave-icon" style="background-image: url(../../assets/icons/fontawesome/play-solid.svg); width: 64px; height:64px; background-size: cover;"></div>
+	</div>
 </div>

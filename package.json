@@ -4,7 +4,7 @@
   "private": true,
   "description": "Full Code Template for the course Mobile Development I",
   "scripts": {
-    "dev": "webpack-dev-server --mode development --open --host 0.0.0.0 ",
+    "dev": "webpack-dev-server --mode development --open --https --host 0.0.0.0 ",
     "build": "webpack --mode production --config ./webpack.config.js "
   },
   "repository": {

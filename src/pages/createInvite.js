@@ -1,17 +1,23 @@
 import App from '../lib/App';
-import EventController from '../lib/EventController';
-import Page from '../lib/Page';
 import Player from '../lib/Player';
-import DataUploader from '../lib/DataUploader';
+import Listener from '../lib/Listener';
+import Page from '../lib/Page';
 
 const createInviteTemplate = require('../templates/createInvite.hbs');
 
-const pageScript = (data) => {
+export default async () => {
+	if (!Player.crewExists()) {
+		await Player.createCrew();
+	}
+
+	const data = { crewCode: Player.getCrewCode() };
+
 	const playBtnId = 'id';
 	const playBtnIcon = 'play-solid'; // or pause-solid
 	const navIdInvite = 'invite';
 	const navIdOverview = 'overview';
 	const navIdSettings = 'settings';
+	const backBtnId = 'backBtn';
 
 	App.render(createInviteTemplate({
 		data,
@@ -20,60 +26,39 @@ const pageScript = (data) => {
 		navIdInvite,
 		navIdOverview,
 		navIdSettings,
+		backBtnId,
 	}));
-	App.router.navigate('/createInvite');
 
-	EventController.addClickListener(navIdInvite, () => {
-		App.router.navigate('/createInvite');
-	});
-	EventController.addClickListener(navIdOverview, () => {
-		App.router.navigate('/createOverview');
-	});
-	EventController.addClickListener(navIdSettings, () => {
-		App.router.navigate('/createSettings');
-	});
-};
+	/* Event listeners */
 
-/**
- * Generates a new crewCode that isn't already in use
- */
-const generateCrewCode = async () => {
-	// Get all existing crewCodes
-	let crewCode;
-	const crewCodesDoc = await App.firebase.db.collection('crews').get();
-	const crewCodes = [];
-	crewCodesDoc.forEach((crew) => {
-		crewCodes.push(crew.id);
+	// navigation
+	Listener.onClick(navIdInvite, () => {
+		Page.goTo('createInvite');
 	});
-	// Generate codes while no unique code has ben generated
-	do {
-		crewCode = Math.floor((Math.random() * 8999) + 1000);
-	} while (crewCodes.includes(crewCode));
-	return crewCode;
-};
+	Listener.onClick(navIdOverview, () => {
+		Page.goTo('createOverview');
+	});
+	Listener.onClick(navIdSettings, () => {
+		Page.goTo('createSettings');
+	});
 
-export default async () => {
-	const currentPage = '/createInvite';
-	const init = await Page.initPage(currentPage);
-	if (init === currentPage) {
-		let crewCode;
-		if (!Player.crew.playerIsModerator()) {
-			crewCode = await generateCrewCode();
-			crewCode = crewCode.toString();
-			DataUploader.createCrew(crewCode);
-			Player.joinCrew(crewCode);
-		} else {
-			crewCode = Player.crew.crewCode;
-			console.log(crewCode);
-		}
-		const crewCreatedListener = App.firebase.db.collection('crews').doc(crewCode).onSnapshot((doc) => {
-			if (doc.exists && doc.data().moderator === Player.userId) {
-				Player.joinCrew(crewCode);
-				pageScript({ crewCode: Player.crew.crewCode });
-				crewCreatedListener();
+	// Go back
+	Listener.onClick(backBtnId, () => {
+		Page.goTo('home');
+	});
+
+	// listen to game start
+	const inGame = await Player.crew.isInGame();
+	if (!inGame) {
+		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
+		const gameStartListener = await Listener.onSnapshot(gameQuery, async (crewDoc) => {
+			const { gameSettings } = crewDoc.data();
+			if (gameSettings.inGame) {
+				// memberListener();
+				gameStartListener();
+				Page.goTo('game');
 			}
-			console.log(doc.data());
 		});
 	}
-	App.router.navigate(currentPage);
+	App.router.navigate('/createInvite');
 };

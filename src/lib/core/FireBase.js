@@ -44,6 +44,41 @@ class FireBase {
 	getProvider() {
 		return new firebase.auth.GoogleAuthProvider();
 	}
+
+	getQuery(docOne, docTwo, docThree) {
+		if (docTwo === undefined && docThree === undefined) {
+			if (docOne[1] === undefined) {
+				return this.db.collection(docOne[0]);
+			} else {
+				return this.db.collection(docOne[0]).doc(docOne[1]);
+			}
+		} else if (docThree === undefined) {
+			if (docTwo[1] === undefined) {
+				return this.db.collection(docOne[0]).doc(docOne[1]).collection(docTwo[0]);
+			} else {
+				return this.db.collection(docOne[0]).doc(docOne[1]).collection(docTwo[0]).doc(docTwo[1]);
+			}
+		}
+		if (docThree[1] === undefined) {
+			return this.db.collection(docOne[0]).doc(docOne[1]).collection(docTwo[0]).doc(docTwo[1])
+				.collection(docThree[0]);
+		}
+		return this.db.collection(docOne[0]).doc(docOne[1]).collection(docTwo[0]).doc(docTwo[1])
+			.collection(docThree[0])
+			.doc(docThree[1]);
+	}
+
+	async getDocIds(docOne, docTwo) {
+		let query;
+		if (docTwo === undefined) {
+			query = this.db.collection(docOne[0]);
+		} else {
+			query = this.db.collection(docOne[0]).doc(docOne[1]).collection(docTwo[0]);
+		}
+		const docs = await query.get();
+
+		return docs.docs.map((document) => document.id);
+	}
 }
 
 export default FireBase;
