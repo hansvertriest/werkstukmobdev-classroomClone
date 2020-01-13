@@ -72,7 +72,13 @@ export default async () => {
 					// start game
 					await Player.crew.startGame(position);
 					await Player.updateLocation(position);
-					Page.goTo('game');
+					await Player.crew.loadTaggers();
+					const taggers = Player.crew.getTaggers();
+					if (taggers.includes(Player.getUserId())) {
+						Page.goTo('gameStart');
+					} else {
+						Page.goTo('game');
+					}
 				},
 				(error) => {
 					console.log(error);

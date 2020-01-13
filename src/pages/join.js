@@ -29,9 +29,10 @@ export default async () => {
 		// check if given crew exists
 		const crews = await App.firebase.getDocIds(['crews']);
 		const crewToJoin = document.getElementById(codeFieldId).value;
-		if (Player.crewExists() && Player.getCrewCode() === crewToJoin) {
-			Page.goTo('createOverview');
-		} else if (crews.includes(crewToJoin) && Player.crewExists()) {
+		// if (Player.crewExists() && Player.getCrewCode() === crewToJoin) {
+		// 	// Page.goTo('createOverview');
+		// } else
+		if (crews.includes(crewToJoin) && Player.crewExists()) {
 			await Player.leaveCrew();
 			await Player.joinCrew(crewToJoin);
 			Page.goTo('crewOverview');

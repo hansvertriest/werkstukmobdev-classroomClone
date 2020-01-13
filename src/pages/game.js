@@ -16,7 +16,9 @@ export default async () => {
 
 	App.render(gameTemplate({
 		isModerator: (await Player.crew.getModerator() === Player.getUserId()),
+		isNotModerator: (!await Player.crew.getModerator() === Player.getUserId()),
 		isNotTagger: (!Player.crew.getTaggers().includes(Player.getUserId())),
+		isTagger: (Player.crew.getTaggers().includes(Player.getUserId())),
 		buttonMsgId,
 		buttonCrewId,
 		buttonSettingsId,
@@ -176,6 +178,9 @@ export default async () => {
 		Page.changeInnerText(timerId, `${minutesLeft}:${secondsLeft}`);
 	}, 1000);
 
+
+	await Player.crew.loadTaggers();
+
 	// listen for game end and change in tagger
 	const crewQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
 	crewDocListener = crewQuery.onSnapshot(async (doc) => {
@@ -195,8 +200,10 @@ export default async () => {
 			locationListener();
 		}
 
+		const taggersLocal = Player.crew.getTaggers();
 		// get change in tagger
-		if (taggers !== Player.crew.getTaggers()) {
+		if (taggers !== taggersLocal) {
+			// Page.goTo('game');
 			// change taggers
 			Player.crew.setTaggers(taggers);
 			if (map.getMap().style.loaded()) {
@@ -206,6 +213,7 @@ export default async () => {
 					map.removePoint(member);
 				});
 			}
+			// clearInterval(timerInterval);
 		}
 
 		// change in gameSettings
@@ -225,7 +233,6 @@ export default async () => {
 		if (tagRequest === Player.getUserId()) {
 			clearInterval(timerInterval);
 			Page.goTo('taggedConfirm');
-			crewDocListener();
 		}
 	});
 
@@ -295,6 +302,13 @@ export default async () => {
 	if (await Player.isModerator()) {
 		Listener.onClick(buttonSettingsId, () => {
 			Page.goTo('createOverview');
+			clearInterval(timerInterval);
+		});
+	}
+
+	if (!await Player.isModerator()) {
+		Listener.onClick(buttonCrewId, () => {
+			Page.goTo('crewOverview');
 			clearInterval(timerInterval);
 		});
 	}

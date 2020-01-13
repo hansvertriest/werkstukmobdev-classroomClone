@@ -1,0 +1,21 @@
+.m-right__buttonCrew, .m-right__buttonSettings {
+	background: $color-game-btn;
+	box-shadow: 0 0 8px rgba(40, 173, 181, 0.69);
+	border-radius: 50%;
+	width: 65px;
+	height: 65px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 10px;
+	margin-bottom: 30px;
+}
+
+.m-door-container {
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: relative;
+}

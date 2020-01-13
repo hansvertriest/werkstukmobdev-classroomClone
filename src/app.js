@@ -47,22 +47,19 @@ const initRoutes = () => {
 window.addEventListener('load', async () => {
 	// init the app
 	initApp();
-
-
 	// check user
-	App.firebase.getAuth().onAuthStateChanged(async (user) => {
+	await App.firebase.getAuth().onAuthStateChanged(async (user) => {
 		if (!user) {
 			// init the routes
 			initRoutes();
 			App.router.navigate('/login');
 		} else {
-			await Player.load(user.uid, true);
 			console.log(`USER: ${user.uid}`);
+
+			await Player.load(user.uid, true);
+			console.log('aa');
 			// init the routes
 			initRoutes();
-
-			// App.router.navigate('/home');
-
 			// route to the requested location (or default)
 			let requestedPage = window.location.hash.split('/')[1];
 			requestedPage = (requestedPage === null || typeof (requestedPage) === 'undefined') ? `/${consts.ROUTER_DEFAULT_PAGE}` : `/${requestedPage}`;

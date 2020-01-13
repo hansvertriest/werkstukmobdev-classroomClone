@@ -23,7 +23,7 @@ class MapBox {
 	getDefaultOptions() {
 		return {
 			container: 'map',
-			style: 'mapbox://styles/mapbox/streets-v11',
+			style: 'mapbox://styles/mapbox/dark-v10',
 			zoom: 13,
 		};
 	}
@@ -68,7 +68,7 @@ class MapBox {
 	}
 
 	setPointColor(source, isTagger = false) {
-		const color = (isTagger) ? '#ebbd34' : '#0e7bb5';
+		const color = (isTagger) ? '#ebbd34' : '#16968E';
 		this.getMap().setPaintProperty(source, 'circle-color', color);
 	}
 

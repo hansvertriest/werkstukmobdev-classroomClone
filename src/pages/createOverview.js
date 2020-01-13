@@ -106,13 +106,18 @@ export default async () => {
 			} else {
 				// get location
 				memberListener();
-				Page.goTo('game');
 				navigator.geolocation.getCurrentPosition(
 					async (position) => {
 						await Player.crew.startGame(position);
 						await Player.updateLocation(position);
+						await Player.crew.loadTaggers();
+						const taggers = Player.crew.getTaggers();
 						memberListener();
-						Page.goTo('game');
+						if (taggers.includes(Player.getUserId())) {
+							Page.goTo('gameStart');
+						} else {
+							Page.goTo('game');
+						}
 					},
 					(error) => {
 						console.log(error);

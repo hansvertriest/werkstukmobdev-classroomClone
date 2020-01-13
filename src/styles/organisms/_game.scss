@@ -1,0 +1,28 @@
+.o-header__right {
+	position: absolute;
+	top: 30px;
+	right: 10px;
+}
+
+.o-header__left {
+	position: absolute;
+	top: 10px;
+	left: 30px;
+}
+
+.a-important-number {
+	color: $color-yellow;
+	letter-spacing: 0.07em;
+	text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+	font-size: $font-size-timer;
+	font-family: "VT323";
+}
+
+.o-game__footer {
+
+	.a-avatar-mask {
+		position: absolute;
+		left: 10px;
+		bottom: 10px;
+	}
+}

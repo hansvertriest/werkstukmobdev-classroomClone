@@ -54,22 +54,28 @@ export default async () => {
 		// listen to game start
 		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
 		gameStartListener = await gameQuery.onSnapshot(async (crewDoc) => {
-			const { gameSettings } = crewDoc.data();
+			const { gameSettings, taggers } = crewDoc.data();
 			if (gameSettings.inGame) {
-				console.log('loading gps');
-				await Player.getLocationFromGps()
-					.then(async (location) => {
-						await Player.updateLocation(location);
-						gameStartListener();
-						memberListener();
-						Page.goTo('game');
-					})
-					.catch((error) => {
-						console.log(error);
-						gameStartListener();
-						memberListener();
-						Page.goTo('connectionLost');
-					});
+				if (!taggers.includes(Player.getUserId())) {
+					console.log('loading gps');
+					await Player.getLocationFromGps()
+						.then(async (location) => {
+							await Player.updateLocation(location);
+							gameStartListener();
+							memberListener();
+							Page.goTo('game');
+						})
+						.catch((error) => {
+							console.log(error);
+							gameStartListener();
+							memberListener();
+							Page.goTo('connectionLost');
+						});
+				} else {
+					gameStartListener();
+					memberListener();
+					Page.goTo('gameStart');
+				}
 			}
 		});
 	});

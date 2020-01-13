@@ -1,6 +1,6 @@
 <div class="o-app-container">
 <p id="debug"></p>
-<div class="a-game__map" id="{{mapId}}" style="width: 100vw; height: 50vh;"></div>
+<div class="a-game__map" id="{{mapId}}"></div>
 <div class="o-game__header">
 	<div class="o-header__left">
 		<p class="a-left__timer" id="{{timerId}}"></p>
@@ -10,15 +10,26 @@
 	</div>
 	<div class="o-header__right">
 		{{!-- <div class="m-right__buttonMsg" id="{{buttonMsgId}}"><div class="a-buttonMsg_icon" style="background-image: url(../../assets/icons/fontawesome/comment-dots-regular.svg); width: 32px; height:32px; background-size: cover;"></div></div> --}}
+
 		<div class="m-right__buttonCrew" id="{{buttonMsgId}}"><p class="a-buttonCrew_text" > Crew</p></div>
+
 		{{#if isModerator}}
 			<div class="m-right__buttonSettings" id="{{buttonSettingsId}}"><img class="a-buttonSettings_icon" src="../assets/icons/fontawesome/cog-solid.svg"></img></div>
 		{{/if}}
 	</div>
 </div>
 <div class="o-game__footer">
+	<div class="a-avatar-mask">
+		{{#if isNotTagger}}
+		<img class="a-avatar__pic" src="../assets/images/avatar/astro1_128.png"></img>
+		{{/if}}
+		{{#if isTagger}}
+		{{!-- alien image made by pedrofmra on itch.io --}}
+		<img class="a-avatar__pic" src="../assets/images/avatar/alien.png"></img>
+		{{/if}}
+	</div>
 	{{#with data}}
-	<img class="a-avatar__pic" src="../assets/images/avatar/astro1_128.png"></img>
+	
 	{{#if isNotTagger}}
 	<div class="m-footer__msgBox">
 		{{#each messages}}

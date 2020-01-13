@@ -1,5 +1,6 @@
 import App from '../lib/App';
 import listener from '../lib/Listener';
+import Player from '../lib/Player';
 
 const loginTemplate = require('../templates/login.hbs');
 
@@ -25,15 +26,14 @@ export default async () => {
 		const email = document.getElementById(emailFieldId).value;
 		const password = document.getElementById(passwordFieldId).value;
 		App._firebase.getAuth().signInWithEmailAndPassword(email, password)
-			.then(async (user) => {
-				console.log(user);
-				if (user) {
-					console.log(user);
+			.then(async () => {
+				const userId = await App.firebase.getAuth().currentUser.uid;
+				const userIds = await App.firebase.getDocIds(['users']);
+				if (userIds.includes(userId)) {
 					App.router.navigate('/home');
 				}
 			})
 			.catch((error) => {
-				console.log(error.message);
 				document.getElementById(errorContainerId).innerText = error.message;
 			});
 	});
@@ -41,12 +41,15 @@ export default async () => {
 	// google btn
 	listener.onClick(googleBtnId, () => {
 		App._firebase.getAuth().signInWithPopup(App._firebase.getProvider())
-			.then((user) => {
-				if (user) {
+			.then(async () => {
+				const userId = await App.firebase.getAuth().currentUser.uid;
+				const userIds = await App.firebase.getDocIds(['users']);
+				if (userIds.includes(userId)) {
 					App.router.navigate('/home');
+				} else {
+					document.getElementById(errorContainerId).innerText = 'No user found with such credentials!';
 				}
 			}).catch((error) => {
-				console.log(error.message);
 				document.getElementById(errorContainerId).innerText = error.message;
 			});
 	});

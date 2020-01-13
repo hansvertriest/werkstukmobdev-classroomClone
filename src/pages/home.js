@@ -5,7 +5,11 @@ import Page from '../lib/Page';
 
 const homeTemplate = require('../templates/home.hbs');
 
-export default () => {
+export default async () => {
+	// if (Player.screenName === undefined) {
+	// 	const userId = await App.firebase.getAuth().currentUser.uid;
+	// 	await Player.load(userId, true);
+	// }
 	/* page data */
 	const data = {
 		screenName: Player.getScreenName(),
