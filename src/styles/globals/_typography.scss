@@ -1,5 +1,13 @@
 $font-size-base: 1.2rem;
-$font-size-small: 12px;
+$font-size-small: 1.1rem;
+$font-size-nav: 1rem;
+$font-size-md: 2rem;
+$font-size-xl: 3rem;
+
 $font-size-btn-primary: 1.4rem;
 $font-size-btn-secondary: 1.1rem;
-$font-size-xl: 3rem;
+
+@media screen and (max-width: $screen-sm) {
+	$font-size-btn-primary: 1.1rem;
+	$font-size-btn-secondary: 0.9rem;
+}

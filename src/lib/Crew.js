@@ -32,6 +32,14 @@ export default class Crew {
 		this.previousTaggers = previousTaggers;
 	}
 
+	async loadGameSettings() {
+		const crewDoc = await App.firebase.getQuery(['crews', this.crewCode]).get();
+		const { gameSettings } = crewDoc.data();
+		this.gameSettings.inGame = gameSettings.inGame;
+		this.gameSettings.centerPoint = gameSettings.centerPoint;
+		this.gameSettings.startDate = gameSettings.startDate;
+	}
+
 	setSettings(duration, radius, gameMode) {
 		this.gameSettings.duration = (!isNaN(duration)) ? duration : this.gameSettings.duration;
 		this.gameSettings.radius = (!isNaN(radius)) ? radius : this.gameSettings.radius;
@@ -54,8 +62,16 @@ export default class Crew {
 		return this.taggers;
 	}
 
+	setTaggers(taggers) {
+		this.taggers = taggers;
+	}
+
 	getPreviousTaggers() {
 		return this.previousTaggers;
+	}
+
+	setPreviousTaggers(previousTagger) {
+		this.previousTaggers = previousTagger;
 	}
 
 	isInGame() {
@@ -68,6 +84,21 @@ export default class Crew {
 
 	getDuration() {
 		return this.gameSettings.duration;
+	}
+
+	setSimulating(bool) {
+		this.simulating = bool;
+	}
+
+	isSimulating() {
+		return this.simulating;
+	}
+
+	async getSimulating() {
+		const crewQuery = App.firebase.getQuery(['crews', this.crewCode]);
+		const crewDoc = await crewQuery.get();
+		const { simulation } = crewDoc.data();
+		this.setSimulating(simulation);
 	}
 
 	async getModerator() {
@@ -101,10 +132,61 @@ export default class Crew {
 		this.taggers = [members[randomIndex]];
 	}
 
+	async removeTaggers() {
+		this.taggers = [];
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			taggers: this.taggers,
+		});
+	}
+
+	async removeMember(userId) {
+		// remove crewcode from userDoc
+		await App.firebase.getQuery(['users', userId]).update({
+			crewCode: '',
+		});
+		// remove coordinates
+		await App.firebase.getQuery(['crews', this.crewCode], ['members', userId]).delete();
+	}
+
+	async addTagger(taggerId) {
+		this.taggers.push(taggerId);
+		console.log(this.taggers);
+		console.log(taggerId);
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			taggers: this.taggers,
+		});
+	}
+
+	async changeTaggersTo(memberIds) {
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			previousTaggers: this.taggers,
+		});
+		this.taggers = [];
+		memberIds.forEach(async (memberId) => {
+			await this.addTagger(memberId);
+		});
+	}
+
+	async setTagRequest(userId) {
+		const crewQuery = App.firebase.getQuery(['crews', this.crewCode]);
+		console.log(userId);
+		await crewQuery.update({
+			tagRequest: userId,
+		});
+	}
+
+	async removeTagRequest() {
+		const crewQuery = App.firebase.getQuery(['crews', this.crewCode]);
+		await crewQuery.update({
+			tagRequest: '',
+		});
+	}
+
 	async startGame(centerPoint) {
 		// start game locally
+		console.log(centerPoint);
 		this.gameSettings.inGame = true;
-		this.gameSettings.centerPoint = centerPoint;
+		this.gameSettings.centerPoint = [centerPoint.coords.longitude, centerPoint.coords.latitude];
 		this.gameSettings.startDate = new Date();
 		this.assignRandomTagger();
 		// upload settings

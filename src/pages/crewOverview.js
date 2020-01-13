@@ -26,9 +26,10 @@ export default async () => {
 	/* DOM variables */
 	const leaveBtnId = 'leaveBtn';
 
+	let gameStartListener;
 	// listen to members
 	const memberQuery = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members']);
-	const memberListener = Listener.onSnapshot(memberQuery, async (docs) => {
+	const memberListener = await memberQuery.onSnapshot(async (docs) => {
 		const memberIds = docs.docs.map((document) => document.id);
 		const data = {
 			crew: await getMemberData(memberIds),
@@ -38,26 +39,38 @@ export default async () => {
 
 		App.render(crewOverviewTemplate({ data, leaveBtnId }));
 
+		App.router.navigate('/crewOverview');
+
 		// leave crew
 		Listener.onClick(leaveBtnId, () => {
 			Player.leaveCrew();
-			Page.goTo('home');
 			memberListener();
+			if (gameStartListener !== undefined) {
+				gameStartListener();
+			}
+			Page.goTo('home');
 		});
-	});
 
-	// listen to game start
-	const inGame = await Player.crew.isInGame();
-	if (!inGame) {
+		// listen to game start
 		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
-		const gameStartListener = await Listener.onSnapshot(gameQuery, async (crewDoc) => {
+		gameStartListener = await gameQuery.onSnapshot(async (crewDoc) => {
 			const { gameSettings } = crewDoc.data();
 			if (gameSettings.inGame) {
-				Page.goTo('game');
-				gameStartListener();
-				memberListener();
+				console.log('loading gps');
+				await Player.getLocationFromGps()
+					.then(async (location) => {
+						await Player.updateLocation(location);
+						gameStartListener();
+						memberListener();
+						Page.goTo('game');
+					})
+					.catch((error) => {
+						console.log(error);
+						gameStartListener();
+						memberListener();
+						Page.goTo('connectionLost');
+					});
 			}
 		});
-	}
-	App.router.navigate('/crewOverview');
+	});
 };

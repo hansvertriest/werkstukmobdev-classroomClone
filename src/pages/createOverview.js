@@ -13,6 +13,7 @@ const getMemberData = async (members) => new Promise((resolve) => {
 		const { avatar, screenName } = userDoc.data();
 		const isModerator = (Player.getUserId() === await Player.crew.getModerator());
 		memberArray.push({
+			userId: member,
 			avatar,
 			screenName,
 			isModerator,
@@ -24,8 +25,9 @@ const getMemberData = async (members) => new Promise((resolve) => {
 });
 
 export default async () => {
+	/* DOM variables */
 	const playBtnId = 'id';
-	const playBtnIcon = 'play-solid'; // or pause-solid
+	const playBtnIcon = (Player.crew.isInGame()) ? '../assets/icons/fontawesome/pause-solid.svg' : '../assets/icons/fontawesome/play-solid.svg';
 	const navIdInvite = 'invite';
 	const navIdOverview = 'overview';
 	const navIdSettings = 'settings';
@@ -33,8 +35,7 @@ export default async () => {
 
 	// listen to members
 	const memberQuery = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members']);
-	const memberListener = await Listener.onSnapshot(memberQuery, async (docs) => {
-		console.log('listener running');
+	const memberListener = await memberQuery.onSnapshot(async (docs) => {
 		const memberIds = docs.docs.map((document) => document.id);
 		const data = {
 			crew: await getMemberData(memberIds),
@@ -52,7 +53,13 @@ export default async () => {
 			navIdSettings,
 			backBtnId,
 		}));
-		Page.goTo('/createOverview');
+
+		// change the button icon: play or pause
+		if (Player.crewExists() && Player.crew.isInGame()) {
+			document.getElementById(playBtnId).src = '../assets/icons/fontawesome/pause-solid.svg';
+			document.getElementById(playBtnId).style.position = 'inherit';
+		}
+		Page.goTo('createOverview');
 
 		/*
 			Event listeners
@@ -60,48 +67,63 @@ export default async () => {
 
 		// navigation
 		Listener.onClick(navIdInvite, () => {
-			Page.goTo('/createInvite');
+			Page.goTo('createInvite');
+			memberListener();
 		});
 		Listener.onClick(navIdOverview, () => {
-			Page.goTo('/createOverview');
+			Page.goTo('createOverview');
+			memberListener();
 		});
 		Listener.onClick(navIdSettings, () => {
-			Page.goTo('/createSettings');
+			Page.goTo('createSettings');
+			memberListener();
+		});
+
+		data.crew.forEach((member) => {
+			Listener.onClick(`${member.userId}-delete`, () => {
+				Player.crew.removeMember(member.userId);
+			});
 		});
 
 		// Go back
 		Listener.onClick(backBtnId, () => {
-			if (Player.crew.isInGame) {
+			if (Player.crew.isInGame()) {
 				Page.goTo('/game');
+				memberListener();
 			} else {
-				Page.goTo(Page.lastPage);
+				Page.goTo('home');
+				memberListener();
 			}
 		});
 
-		// start game
+		// start/stop game
 		Listener.onClick(playBtnId, async () => {
-			// get location
-			const currentLocation = await Player.getLocation()
-				.catch((error) => {
-					console.log(error);
-				});
-			// start game
-			await Player.crew.startGame(currentLocation);
-			console.log(Player.locationAccuracy);
+			if (Player.crew.isInGame()) {
+				// stop game
+				Player.crew.stopGame();
+				memberListener();
+				App.router.navigate('home');
+			} else {
+				// get location
+				memberListener();
+				Page.goTo('game');
+				navigator.geolocation.getCurrentPosition(
+					async (position) => {
+						await Player.crew.startGame(position);
+						await Player.updateLocation(position);
+						memberListener();
+						Page.goTo('game');
+					},
+					(error) => {
+						console.log(error);
+						Page.goTo('connectionLost');
+					},
+					{
+						// enableHighAccuracy: true,
+						timeout: 10000,
+					},
+				);
+			}
 		});
 	});
-
-	// listen to game start
-	const inGame = await Player.crew.isInGame();
-	if (!inGame) {
-		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
-		const gameStartListener = await Listener.onSnapshot(gameQuery, async (crewDoc) => {
-			const { gameSettings } = crewDoc.data();
-			if (gameSettings.inGame) {
-				memberListener();
-				gameStartListener();
-				Page.goTo('game');
-			}
-		});
-	}
 };

@@ -15,6 +15,9 @@ import Passwordsent from './pages/passwordSent';
 import Register from './pages/register';
 import Registeravatar from './pages/registerAvatar';
 import Backcrewdetail from './pages/backCrewDetail';
+import Connectionlost from './pages/connectionLost';
+import Taggedparasite from './pages/taggedParasite';
+import Taggedconfirm from './pages/taggedConfirm';
 
 export default [
 	{ path: '/backCrewList', view: Backcrewlist },
@@ -32,5 +35,8 @@ export default [
 	{ path: '/passwordSent', view: Passwordsent },
 	{ path: '/register', view: Register },
 	{ path: '/backCrewDetail', view: Backcrewdetail },
+	{ path: '/connectionLost', view: Connectionlost },
+	{ path: '/taggedParasite', view: Taggedparasite },
+	{ path: '/taggedConfirm', view: Taggedconfirm },
 	{ path: '/registerAvatar', view: Registeravatar },
 ];

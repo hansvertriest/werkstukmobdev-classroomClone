@@ -1,0 +1,19 @@
+.a-input__field {
+	border-bottom: 1px solid $color-secondary-link;
+	box-shadow: 0 2px 2px rgba(40, 173, 181, 0.69);
+	width: 65px;
+	height: 30px;
+	margin: 0 20px;
+	padding-left: 10px;
+}
+
+.a-settingTitle {
+	font-size: $font-size-base;
+	text-align: left;
+}
+
+.a-game-zone__setting-description, .a-game-mode__setting-description {
+	font-size: $font-size-small;
+	text-align: left;
+	font-weight: 200;
+}

@@ -25,9 +25,10 @@ export default async () => {
 		const email = document.getElementById(emailFieldId).value;
 		const password = document.getElementById(passwordFieldId).value;
 		App._firebase.getAuth().signInWithEmailAndPassword(email, password)
-			.then(async () => {
-				const user = await App.firebase.getAuth().getCurrentUser;
+			.then(async (user) => {
+				console.log(user);
 				if (user) {
+					console.log(user);
 					App.router.navigate('/home');
 				}
 			})

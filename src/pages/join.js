@@ -31,9 +31,12 @@ export default async () => {
 		const crewToJoin = document.getElementById(codeFieldId).value;
 		if (Player.crewExists() && Player.getCrewCode() === crewToJoin) {
 			Page.goTo('createOverview');
-		} else if (crews.includes(crewToJoin)) {
+		} else if (crews.includes(crewToJoin) && Player.crewExists()) {
+			await Player.leaveCrew();
 			await Player.joinCrew(crewToJoin);
 			Page.goTo('crewOverview');
+		} else if (crews.includes(crewToJoin)) {
+			await Player.joinCrew(crewToJoin);
 		} else {
 			document.getElementById(errorContainerId).innerText = 'Could not find crew!';
 		}

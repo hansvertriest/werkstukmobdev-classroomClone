@@ -9,16 +9,16 @@
 		{{/if}}
 	</div>
 	<div class="o-header__right">
-		<div class="m-right__buttonMsg" id="{{buttonMsgId}}"><div class="a-buttonMsg_icon" style="background-image: url(../../assets/icons/fontawesome/comment-dots-regular.svg); width: 32px; height:32px; background-size: cover;"></div></div>
+		{{!-- <div class="m-right__buttonMsg" id="{{buttonMsgId}}"><div class="a-buttonMsg_icon" style="background-image: url(../../assets/icons/fontawesome/comment-dots-regular.svg); width: 32px; height:32px; background-size: cover;"></div></div> --}}
 		<div class="m-right__buttonCrew" id="{{buttonMsgId}}"><p class="a-buttonCrew_text" > Crew</p></div>
 		{{#if isModerator}}
-			<div class="m-right__buttonSettings" id="{{buttonSettingsId}}"><div class="a-buttonSettings_icon" style="background-image: url(../../assets/icons/fontawesome/cog-solid.svg); width: 32px; height:32px; background-size: cover;"></div></div>
+			<div class="m-right__buttonSettings" id="{{buttonSettingsId}}"><img class="a-buttonSettings_icon" src="../assets/icons/fontawesome/cog-solid.svg"></img></div>
 		{{/if}}
 	</div>
 </div>
 <div class="o-game__footer">
 	{{#with data}}
-	<div class="a-avatar__pic" style="background-image: url(../../assets/images/avatar/{{avatar}}_128.png); width: 64px; height:64px; background-size: cover;"></div>
+	<img class="a-avatar__pic" src="../assets/images/avatar/astro1_128.png"></img>
 	{{#if isNotTagger}}
 	<div class="m-footer__msgBox">
 		{{#each messages}}
@@ -30,5 +30,8 @@
 	{{/if}}
 	{{/with}}
 	
+</div>
+<div id="loadingContainer">
+	<i style="background-image: url(../../assets/icons/fontawesome/spinner-solid.svg"></i>
 </div>
 </div>

@@ -10,7 +10,7 @@ export default () => {
 	let avatarIndex = 0;
 
 	/* DOM variables	*/
-	let avatar = avatars[avatarIndex];
+	let avatar = `../assets/images/avatar/${avatars[avatarIndex]}_128.png`;
 	const chooseBtnId = 'chooseBtn';
 	const goLeftBtnId = 'goLeftBtn';
 	const goRightBtnId = 'geRightBtn';
@@ -28,13 +28,13 @@ export default () => {
 	Listener.onClick(goLeftBtnId, () => {
 		avatarIndex = (avatarIndex === 0) ? avatars.length - 1 : avatarIndex - 1;
 		avatar = avatars[avatarIndex];
-		document.getElementById('avatarDiv').style.backgroundImage = `url(../../assets/images/avatar/${avatar}_128.png)`;
+		document.getElementById('avatarDiv').style.backgroundImage = `../assets/images/avatar/${avatar}_128.png`;
 	});
 
 	Listener.onClick(goRightBtnId, () => {
 		avatarIndex = (avatarIndex + 1 === avatars.length) ? 0 : avatarIndex + 1;
 		avatar = avatars[avatarIndex];
-		document.getElementById('avatarDiv').style.backgroundImage = `url(../../assets/images/avatar/${avatar}_128.png)`;
+		document.getElementById('avatarDiv').style.backgroundImage = `../assets/images/avatar/${avatar}_128.png`;
 	});
 
 	// Register avatar

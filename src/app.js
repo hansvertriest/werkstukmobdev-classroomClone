@@ -61,6 +61,8 @@ window.addEventListener('load', async () => {
 			// init the routes
 			initRoutes();
 
+			// App.router.navigate('/home');
+
 			// route to the requested location (or default)
 			let requestedPage = window.location.hash.split('/')[1];
 			requestedPage = (requestedPage === null || typeof (requestedPage) === 'undefined') ? `/${consts.ROUTER_DEFAULT_PAGE}` : `/${requestedPage}`;

@@ -8,12 +8,14 @@ const createInviteTemplate = require('../templates/createInvite.hbs');
 export default async () => {
 	if (!Player.crewExists()) {
 		await Player.createCrew();
+	} else if (!await Player.isModerator()) {
+		await Player.createCrew();
 	}
 
 	const data = { crewCode: Player.getCrewCode() };
 
 	const playBtnId = 'id';
-	const playBtnIcon = 'play-solid'; // or pause-solid
+	const playBtnIcon = (Player.crew.isInGame()) ? '../assets/icons/fontawesome/pause-solid.svg' : '../assets/icons/fontawesome/play-solid.svg';
 	const navIdInvite = 'invite';
 	const navIdOverview = 'overview';
 	const navIdSettings = 'settings';
@@ -44,21 +46,44 @@ export default async () => {
 
 	// Go back
 	Listener.onClick(backBtnId, () => {
-		Page.goTo('home');
+		if (Player.crew.isInGame()) {
+			Page.goTo('/game');
+		} else {
+			Page.goTo('home');
+		}
 	});
 
-	// listen to game start
-	const inGame = await Player.crew.isInGame();
-	if (!inGame) {
-		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
-		const gameStartListener = await Listener.onSnapshot(gameQuery, async (crewDoc) => {
-			const { gameSettings } = crewDoc.data();
-			if (gameSettings.inGame) {
-				// memberListener();
-				gameStartListener();
-				Page.goTo('game');
-			}
-		});
+	// change the button icon: play or pause
+	if (Player.crewExists() && Player.crew.isInGame()) {
+		document.getElementById(playBtnId).src = '../assets/icons/fontawesome/pause-solid.svg';
+		document.getElementById(playBtnId).style.position = 'inherit';
 	}
+
+	// start/stop game
+	Listener.onClick(playBtnId, async () => {
+		if (Player.crew.isInGame()) {
+			// stop game
+			Player.crew.stopGame();
+			App.router.navigate('createInvite');
+		} else {
+			// get location
+			navigator.geolocation.getCurrentPosition(
+				async (position) => {
+					// start game
+					await Player.crew.startGame(position);
+					await Player.updateLocation(position);
+					Page.goTo('game');
+				},
+				(error) => {
+					console.log(error);
+					Page.goTo('connectionLost');
+				},
+				{
+					// enableHighAccuracy: true,
+					timeout: 10000,
+				},
+			);
+		}
+	});
 	App.router.navigate('/createInvite');
 };

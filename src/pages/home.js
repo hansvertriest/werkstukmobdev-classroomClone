@@ -9,7 +9,7 @@ export default () => {
 	/* page data */
 	const data = {
 		screenName: Player.getScreenName(),
-		avatar: Player.getAvatar(),
+		avatar: `../assets/images/avatar/${Player.getAvatar()}_128.png`,
 	};
 	/* DOM variables */
 	const joinBtnId = 'joinBtn';

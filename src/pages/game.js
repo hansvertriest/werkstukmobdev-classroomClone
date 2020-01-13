@@ -15,7 +15,7 @@ export default async () => {
 	const timerId = 'timer';
 
 	App.render(gameTemplate({
-		isModerator: (Player.crew.getModerator() === Player.getUserId()),
+		isModerator: (await Player.crew.getModerator() === Player.getUserId()),
 		isNotTagger: (!Player.crew.getTaggers().includes(Player.getUserId())),
 		buttonMsgId,
 		buttonCrewId,
@@ -25,11 +25,137 @@ export default async () => {
 	}));
 	App.router.navigate('/game');
 
+	// load game settings
+	await Player.crew.loadGameSettings();
+	const map = new Mapbox('pk.eyJ1IjoibWlnaHR5YmlpaXkiLCJhIjoiY2s1NDM0NnhrMGRzcTNqb2ZoMXJ2cWNwdyJ9.eQxl50P8hC0WzG7bv7G4CQ');
+
+	// set map points
+	let locationListener;
+	map.getMap().on('load', async () => {
+		// go to a location with streets so player sees the map is laoded
+		map.flyToCoords(3.711680, 51.062530);
+
+		// disable loader animation
+		document.getElementById('loadingContainer').style.display = 'none';
+
+		// listen for locations and set points
+		const locationQuery = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members']);
+		locationListener = locationQuery.onSnapshot((docs) => {
+			// get all member documents
+			const members = docs.docs.map((member) => ({
+				userId: member.id,
+				data: member.data(),
+			}));
+
+			const localStoredMembers = Player.crew.getMembers();
+			const localStoredMemberIds = Player.crew.getMemberIds();
+			const memberLayers = map.getMemberLayers(localStoredMemberIds);
+			// check if member has moved
+			members.forEach(async (member) => {
+				// if member is not found locally, reload members
+				if (!localStoredMemberIds.includes(member.userId)) {
+					await Player.crew.loadMembers();
+
+				// check if member = Player (only the members should be displayed as the Player gets displayed in the watchPosition)
+				} else if (member.userId !== Player.getUserId()) {
+					// check if the data differs from the local data, only changed data should be updated
+					if (localStoredMembers[member.userId].lon !== member.data.lon || localStoredMembers[member.userId].lat !== member.data.lat) {
+						// update member locally
+						Player.crew.members[member.userId].lon = member.data.lon;
+						Player.crew.members[member.userId].lat = member.data.lat;
+
+						/*
+							Displaying members on map
+							Only displays other members, the Player gets displayed in the GPS watcher
+						*/
+
+						// check if
+						//	member is already displayed
+						//	if the Player is the tagger, if not members should not be displayed
+						if (!memberLayers.includes(member.userId) && Player.isTagger()) {
+							map.addPoint(member.userId, {
+								type: 'Point',
+								coordinates: [member.data.lon, member.data.lat],
+							});
+							// set tagger
+							map.setPointColor(member.userId);
+						} else if (member.userId !== Player.getUserId() && Player.isTagger()) {
+							console.log('member');
+							map.changeData(member.userId, {
+								type: 'Point',
+								coordinates: [member.data.lon, member.data.lat],
+							});
+
+							// if this point is the players point
+							if (member.userId === Player.getUserId()) {
+								map.goToCoords(member.data.lon, member.data.lat);
+							}
+						}
+					}
+				}
+			});
+		});
+
+		// check steps for when in simulate mode
+		const memberDoc = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members', Player.getUserId()]);
+		memberDoc.onSnapshot(async (doc) => {
+			if (Player.crew.isSimulating()) {
+				const { lon, lat } = doc.data();
+
+				// update location locally
+				Player.updateLocationLocally(lon, lat);
+
+				// check if point is already on the map
+				const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
+				if (memberLayers.includes(Player.getUserId())) {
+					map.changeData(Player.getUserId(), {
+						type: 'Point',
+						coordinates: [lon, lat],
+					});
+				} else {
+					map.addPoint(Player.getUserId(), {
+						type: 'Point',
+						coordinates: [lon, lat],
+					});
+					// set tagger
+					map.setPointColor(Player.getUserId(), true);
+				}
+
+				// update color
+				if (Player.isTagger()) {
+					map.setPointColor(Player.getUserId(), true);
+				} else {
+					map.setPointColor(Player.getUserId());
+				}
+				map.goToCoords(lon, lat);
+
+				// check if has tagged
+				if (Player.isTagger()) {
+					await Player.checkIfPlayerHasTagged();
+				} else {
+					const { distance } = Player.getDistanceToTaggers();
+					Page.changeInnerText('distance', `${Math.floor(distance * 1000)}m`);
+				}
+				// check if out of zone
+				// const outOfZone = Player.checkIfOutOfZone();
+				// if (outOfZone) {
+				// 	locationListener();
+				// 	await Player.leaveCrew();
+				// 	Page.goTo('home');
+				// }
+				map.goToCoords(lon, lat);
+			}
+		});
+	});
+
+	// listeners
+	let crewDocListener;
 
 	// set timer
 	const timerInterval = setInterval(async () => {
+		const startDate = Player.crew.getStartDate();
 		const now = new Date().getTime() / 1000;
-		const difference = Math.floor(now - Player.crew.getStartDate().seconds);
+		const difference = Math.floor(now - startDate.seconds);
 		const differenceMinutes = Math.floor(difference / 60);
 		const differenceSeconds = (difference - differenceMinutes * 60);
 		let minutesLeft = Player.crew.getDuration() - differenceMinutes;
@@ -41,60 +167,135 @@ export default async () => {
 		}
 		if (minutesLeft < 0) {
 			// stop game
-			await Player.crew.stopGame();
+			crewDocListener();
+			locationListener();
 			clearInterval(timerInterval);
+			await Player.crew.stopGame();
+			Page.goTo('home');
 		}
 		Page.changeInnerText(timerId, `${minutesLeft}:${secondsLeft}`);
 	}, 1000);
 
+	// listen for game end and change in tagger
+	const crewQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
+	crewDocListener = crewQuery.onSnapshot(async (doc) => {
+		const {
+			gameSettings,
+			taggers,
+			simulating,
+			tagRequest,
+			previousTaggers,
+		} = doc.data();
+		if (!gameSettings.inGame) {
+			App.router.navigate('/home');
+			clearInterval(timerInterval);
 
-	// init map
-	const map = new Mapbox('pk.eyJ1IjoicGltcGFtcG9taWtiZW5zdG9tIiwiYSI6ImNqdmM1a3dibjFmOHE0NG1qcG9wcHdmNnIifQ.ZwK_kkHHAYRTbnQvD7oVBw');
+			// unsubscribe listeners
+			crewDocListener();
+			locationListener();
+		}
 
-	// set map points
-	map.getMap().on('load', async () => {
-		// listen for locations and set points
-		const locationQuery = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members']);
-		const locationListener = Listener.onSnapshot(locationQuery, (docs) => {
-			// get all member documents
-			const members = docs.docs.map((member) => ({
-				userId: member.id,
-				data: member.data(),
-			}));
+		// get change in tagger
+		if (taggers !== Player.crew.getTaggers()) {
+			// change taggers
+			Player.crew.setTaggers(taggers);
+			if (map.getMap().style.loaded()) {
+				// remove all points on the map
+				const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
+				memberLayers.forEach((member) => {
+					map.removePoint(member);
+				});
+			}
+		}
 
-			const localStoredMembers = Player.crew.getMembers();
-			const localStoredMemberIds = Player.crew.getMemberIds();
-			const memberLayers = map.getMemberLayers(localStoredMemberIds);
-			console.log(memberLayers);
-			// check if member has moved
-			members.forEach(async (member) => {
-				// if member is not found locally, reload members
-				if (!localStoredMemberIds.includes(member.userId)) {
-					await Player.crew.loadMembers();
-				} else if (localStoredMembers[member.userId].lon !== member.data.lon || localStoredMembers[member.userId].lat !== member.data.lat) {
-					// check if the map already contains this members point
-					if (!memberLayers.includes(member.userId)) {
-						map.addPoint(member.userId, {
-							type: 'Point',
-							coordinates: [member.data.lon, member.data.lat],
-						});
-					} else {
-						map.changeData(member.userId, {
-							type: 'Point',
-							coordinates: [member.data.lon, member.data.lat],
-						});
-					}
-					map.goToCoords(member.data.lon, member.data.lat);
-					console.log(`${member.userId}: point has hanged!`);
-				} else {
-					// do nothing
-					console.log(`${member.userId}: point did not change!`);
-				}
-			});
-		});
+		// change in gameSettings
+		if (gameSettings !== Player.crew.getSettings) {
+			Player.crew.setSettings(gameSettings);
+		}
+
+		// get change in previousTagger
+		if (previousTaggers !== Player.crew.getPreviousTaggers()) {
+			Player.crew.setPreviousTaggers(previousTaggers);
+		}
+
+		// update if game is simulating
+		Player.crew.setSimulating(simulating);
+
+		// check the tag request
+		if (tagRequest === Player.getUserId()) {
+			clearInterval(timerInterval);
+			Page.goTo('taggedConfirm');
+			crewDocListener();
+		}
 	});
 
-	// listen for game end and change in tagger
-
 	// listen to gps
+	navigator.geolocation.watchPosition(
+		async (position) => {
+			if (!Player.crew.isSimulating()) {
+				// update location locally and in db
+				await Player.updateLocation(position);
+
+				// update location on map
+				if (map.getMap().style.loaded()) {
+					// check if point is already on the map
+					const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
+					if (memberLayers.includes(Player.getUserId())) {
+						map.changeData(Player.getUserId(), {
+							type: 'Point',
+							coordinates: [position.coords.longitude, position.coords.latitude],
+						});
+					} else {
+						map.addPoint(Player.getUserId(), {
+							type: 'Point',
+							coordinates: [position.coords.longitude, position.coords.latitude],
+						});
+						// set color
+						map.setPointColor(Player.getUserId(), true);
+					}
+
+					// update color and check if Player has tagged someone
+					if (Player.isTagger()) {
+						await Player.checkIfPlayerHasTagged();
+						map.setPointColor(Player.getUserId(), true);
+					} else {
+						map.setPointColor(Player.getUserId());
+					}
+
+					// check if out of zone
+					// const outOfZone = await Player.checkIfOutOfZone();
+					// if (outOfZone) {
+					// 	locationListener();
+					// 	await Player.leaveCrew();
+					// 	Page.goTo('home');
+					// }
+					map.goToCoords(position.coords.longitude, position.coords.latitude);
+				}
+
+				// set alien distance
+				if (!Player.isTagger()) {
+					const { distance } = Player.getDistanceToTaggers();
+					Page.changeInnerText('distance', `${Math.floor(distance * 1000)}m`);
+				}
+			}
+		},
+		() => {
+			console.log('GPS FAILED');
+		},
+		{
+			enableHighAccuracy: true,
+		},
+	);
+
+	/*
+		Event listeners
+	*/
+
+	// if moderator add the go to settings listener
+	if (await Player.isModerator()) {
+		Listener.onClick(buttonSettingsId, () => {
+			Page.goTo('createOverview');
+			clearInterval(timerInterval);
+		});
+	}
 };

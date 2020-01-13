@@ -3,7 +3,7 @@
  */
 
 // general
-export const SITE_TITLE = 'My Application';
+export const SITE_TITLE = 'Space Infection';
 
 // router
 export const ROUTER_HASH = '#!';

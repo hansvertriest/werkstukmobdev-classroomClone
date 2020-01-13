@@ -1,9 +1,12 @@
 
+<div class="o-app-container">
 <h2>Don't let the alien near you.</h2>
 <div class="o-player-account">
 	{{#with data}}
 	<div class="m-player-account__avatar-container">
-		<div class="a-avatar__pic" style="background-image: url(../../assets/images/avatar/{{avatar}}_128.png); width: 64px; height:64px; background-size: cover;"></div>
+		<div class="a-avatar-mask">
+			<img class="a-avatar__pic" src="../assets/images/avatar/astro1_128.png"></img>
+		</div>
 		<div class="a-avatar-container__icon"></div>
 	</div>
 	<p class="a-player-account__player-name"> {{ screenName }} </p>
@@ -13,5 +16,5 @@
 	{{> primaryButton btn_txt="join crew" btn_id=joinBtnId  }}
 	{{> primaryButton btn_txt="create crew" btn_id=createBtnId }}
 </div>
-{{logOutbtnId}}
 {{> secondaryButton btn_text="log out" btn_id=logOutBtnId}}
+</div>

@@ -34,7 +34,7 @@ const getMemberData = async () => {
 
 export default async () => {
 	const playBtnId = 'playBtn';
-	const playBtnIcon = 'play-solid'; // or pause-solid
+	const playBtnIcon = (Player.crew.isInGame()) ? '../assets/icons/fontawesome/pause-solid.svg' : '../assets/icons/fontawesome/play-solid.svg';
 	const navIdInvite = 'invite';
 	const navIdOverview = 'overview';
 	const navIdSettings = 'settings';
@@ -55,7 +55,13 @@ export default async () => {
 		navIdSettings,
 		backBtnId,
 	}));
-	Page.goTo('/createSettings');
+	Page.goTo('createSettings');
+
+	// change the button icon: play or pause
+	if (Player.crewExists() && Player.crew.isInGame()) {
+		document.getElementById(playBtnId).src = '../assets/icons/fontawesome/pause-solid.svg';
+		document.getElementById(playBtnId).style.position = 'inherit';
+	}
 
 	/*
 		Event listeners
@@ -63,13 +69,13 @@ export default async () => {
 
 	// navigation
 	Listener.onClick(navIdInvite, () => {
-		Page.goTo('/createInvite');
+		Page.goTo('createInvite');
 	});
 	Listener.onClick(navIdOverview, () => {
-		Page.goTo('/createOverview');
+		Page.goTo('createOverview');
 	});
 	Listener.onClick(navIdSettings, () => {
-		Page.goTo('/createSettings');
+		Page.goTo('createSettings');
 	});
 
 	// selecting gameMode
@@ -78,14 +84,13 @@ export default async () => {
 		gameMode = 'parasite';
 	});
 
-
-	Listener.onClick(plagueBtnId, () => {
-		gameMode = 'plague';
-	});
+	// Listener.onClick(plagueBtnId, () => {
+	// 	gameMode = 'plague';
+	// });
 
 	// Go back
 	Listener.onClick(backBtnId, async () => {
-		if (Player.crew.isInGame) {
+		if (Player.crew.isInGame()) {
 			Page.goTo('game');
 		} else {
 			// get settings
@@ -94,36 +99,39 @@ export default async () => {
 			// set settings
 			Player.crew.setSettings(duration, radius, gameMode);
 			// got to last page
-			Page.goTo(Page.lastPage);
+			Page.goTo('home');
 		}
 	});
 
 	// start game
 	Listener.onClick(playBtnId, async () => {
-		// get settings
-		const duration = parseInt(document.getElementById(durationFieldId).value, 10);
-		const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
-		// set settings
-		Player.crew.setSettings(duration, radius, gameMode);
-		// get location
-		const currentLocation = await Player.getLocation();
-		// start game
-		await Player.crew.startGame(currentLocation);
-		console.log(Player.locationAccuracy);
+		if (Player.crew.isInGame()) {
+			// stop game
+			Player.crew.stopGame();
+			App.router.navigate('createOverview');
+		} else {
+			// get settings
+			const duration = parseInt(document.getElementById(durationFieldId).value, 10);
+			const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
+			// set settings
+			Player.crew.setSettings(duration, radius, gameMode);
+			// get location
+			navigator.geolocation.getCurrentPosition(
+				async (position) => {
+					// start game
+					await Player.crew.startGame(position);
+					await Player.updateLocation(position);
+					Page.goTo('game');
+				},
+				(error) => {
+					console.log(error);
+					Page.goTo('connectionLost');
+				},
+				{
+					// enableHighAccuracy: true,
+					timeout: 10000,
+				},
+			);
+		}
 	});
-
-	// listen to game start
-	const inGame = await Player.crew.isInGame();
-	if (!inGame) {
-		const gameQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
-		const gameStartListener = await Listener.onSnapshot(gameQuery, async (crewDoc) => {
-			const { gameSettings } = crewDoc.data();
-			console.log('ee');
-			// check if game isn't already running
-			if (gameSettings.inGame) {
-				Page.goTo('game');
-				gameStartListener();
-			}
-		});
-	}
 };

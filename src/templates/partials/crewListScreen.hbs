@@ -2,11 +2,15 @@
 	{{#each crew}}
 	{{#with this}}
 		<div class="m-overview__avatar">
-			<div class="a-avatar__pic" style="background-image: url(../../assets/images/avatar/{{avatar}}_64.png); width: 64px; height:64px; background-size: cover;"></div>
-			<div class="a-avatar_emblem" {{#if emblem}}style="background-image: url(../../assets/icons/fontawesome/{{emblem}}.svg); width: 20px; height:20px; background-size: cover;" {{/if}}></div>
+			<img class="a-avatar__pic" src="../../assets/images/avatar/astro1_128.png"></img>
+			<div class="a-avatar_emblem"></div>
 		</div>
 		<p class="a-text"> {{ screenName }} </p>
 		<div class="m-overview__divider"></div>
+	{{#if isModerator}}
+		<button id ="{{userId}}-delete">X</button>
+	{{/if}}
+
 	{{/with}}
 	{{/each}}
 </ul>

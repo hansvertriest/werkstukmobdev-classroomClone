@@ -33,3 +33,24 @@
 .a-register-form__error-container, .a-login-form__error-container {
 	color: $color-error;
 }
+
+.a-code {
+	height: 60px;
+	background: rgba(0, 0, 0, 0.34);
+	border: 2px solid #28ADB5;
+	box-sizing: border-box;
+	box-shadow: 0 0 8px rgba(40, 173, 181, 0.58);
+	border-radius: 2px;
+	width: 200px;
+	color: $color-yellow;
+	font-size: $font-size-md;
+	letter-spacing: 18px;
+	padding: 0 25px;
+}
+
+::placeholder {
+	color: $color-yellow;
+	font-size: $font-size-xl;
+	letter-spacing: 30px;
+	padding: 0 25px;
+}

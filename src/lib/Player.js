@@ -1,5 +1,6 @@
 import App from './App';
 import Crew from './Crew';
+import Notifications from './Notifications';
 
 class Player {
 	register(userId, screenName, avatar = 'astro1') {
@@ -7,6 +8,7 @@ class Player {
 		this.userId = userId;
 		this.screenName = screenName;
 		this.avatar = avatar;
+		this.timesOutOfRange = 0;
 		// store in local
 		App.localStorage.setItem('screenName', screenName);
 		App.localStorage.setItem('avatar', avatar);
@@ -107,10 +109,11 @@ class Player {
 	 */
 	async initCrew(crewCode) {
 		await App.firebase.getQuery(['crews', crewCode]).set({
+			simulating: false,
 			gameSettings: {
 				inGame: false,
 				duration: 10,
-				startData: new Date(),
+				startDate: new Date(),
 				centerPoint: {
 					lon: 3.727280,
 					lat: 51.039740,
@@ -120,6 +123,7 @@ class Player {
 			},
 			taggers: [],
 			previousTaggers: [],
+			tagRequest: '',
 			moderator: this.getUserId(),
 		});
 	}
@@ -150,7 +154,8 @@ class Player {
 
 	async leaveCrew() {
 		// check if player is last one and if he is moderator
-		const members = await this.crew.getMemberIds();
+		await this.crew.loadMembers();
+		const members = this.crew.getMemberIds();
 		if (members[1] === undefined) {
 			await this.crew.deleteFromDB();
 		} else if (await this.crew.getModerator() === this.getUserId()) {
@@ -171,24 +176,155 @@ class Player {
 		this.crew = undefined;
 	}
 
-	async getLocation() {
-		return new Promise((resolve, reject) => {
-			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					this.locationAccuracy = position.coords.accuracy;
-					resolve({
-						lon: position.coords.longitude,
-						lat: position.coords.latitude,
-					});
-				},
-				() => {
-					reject();
-				},
-				{
-					enableHighAccuracy: true,
-				},
-			);
+	// Source: GeoDataSource.com
+	checkDistance(lon1, lat1, lon2, lat2) {
+		if ((lat1 === lat2) && (lon1 === lon2)) {
+			return 0;
+		} else {
+			const radlat1 = (Math.PI * lat1) / 180;
+			const radlat2 = (Math.PI * lat2) / 180;
+			const theta = lon1 - lon2;
+			const radtheta = (Math.PI * theta) / 180;
+			// eslint-disable-next-line max-len
+			let dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+			if (dist > 1) {
+				dist = 1;
+			}
+			dist = Math.acos(dist);
+			dist = (dist * 180) / Math.PI;
+			dist = dist * 60 * 1.1515;
+			dist *= 1.609344;
+			return dist;
+		}
+	}
+
+	/**
+	 * @description returns an object containing tagger and distance
+	 */
+	getDistanceToTaggers() { // check the distance to the tagger
+		const taggers = this.crew.getTaggers();
+		let closestTaggerId;
+		let closestDistance;
+		taggers.forEach((tagger) => {
+			const taggerObj = this.crew.getMembers()[tagger];
+			const distance = this.checkDistance(taggerObj.lon, taggerObj.lat, this.getLocation().lon, this.getLocation().lat);
+			if (closestTaggerId === undefined || closestDistance > distance) {
+				closestTaggerId = tagger;
+				closestDistance = distance;
+			}
 		});
+		return {
+			userId: closestTaggerId,
+			distance: closestDistance,
+		};
+	}
+
+	/**
+	 * @description returns an object containing memberId and distance
+	 */
+	getDistanceToMembers() {
+		const members = this.crew.getMembers();
+		const memberIds = this.crew.getMemberIds().filter((memberId) => memberId !== this.getUserId());
+		let closestMemberId;
+		let closestDistance;
+		memberIds.forEach((memberId) => {
+			const member = members[memberId];
+			const distance = this.checkDistance(member.lon, member.lat, this.getLocation().lon, this.getLocation().lat);
+			if (closestMemberId === undefined || closestDistance > distance) {
+				closestMemberId = memberId;
+				closestDistance = distance;
+			}
+		});
+		return {
+			userId: closestMemberId,
+			distance: closestDistance,
+		};
+	}
+
+	async checkIfTagged() {
+		const taggerObj = this.getDistanceToTaggers();
+		if (taggerObj.distance < 0.01) {
+			// TODO implement not tagging back
+			await this.crew.setTagRequest(this.getUserId());
+			// await this.crew.changeTaggersTo([this.getUserId()]);
+		}
+	}
+
+	async checkIfPlayerHasTagged() {
+		const member = this.getDistanceToMembers();
+		if (member.distance < 0.01 && !this.crew.getPreviousTaggers().includes(member.userId)) {
+			console.log(member);
+			await this.crew.setTagRequest(member.userId);
+		}
+	}
+
+	async checkIfOutOfZone() {
+		// get distance
+		const { centerPoint } = this.crew.getSettings();
+		const distance = this.checkDistance(this.getLocation().lon, this.getLocation().lat, centerPoint[0], centerPoint[1]);
+		const maxTimesOutOfZone = (this.crew.isSimulating()) ? 5 : 100;
+		if (distance > this.crew.getSettings().radius / 1000) {
+			if (Notifications.getPermission()) {
+				Notifications.sentNotification('Get back into the contamination zone!');
+			}
+			this.timesOutOfRange++;
+			if (this.timeOutOfRange > maxTimesOutOfZone) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	async getLocationFromGps() {
+		return new Promise((resolve, reject) => {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(
+					(position) => {
+						this.locationAccuracy = position.coords.accuracy;
+						resolve({
+							coords: {
+								longitude: position.coords.longitude,
+								latitude: position.coords.latitude,
+							},
+						});
+					},
+					(error) => {
+						reject(error);
+					},
+					{
+						// enableHighAccuracy: true,
+						timeout: 10000,
+					},
+				);
+			} else {
+				reject();
+			}
+		});
+	}
+
+	async updateLocation(position) {
+		// locally
+		this.crew.members[this.getUserId()].location = { lon: position.coords.longitude, lat: position.coords.latitude };
+		if (this.lastLocationUpdateTime === undefined) {
+			this.lastLocationUpdateTime = new Date();
+		}
+		// check tagger distance
+		if (this.isTagger()) {
+			this.checkIfPlayerHasTagged();
+		}
+		const now = new Date();
+		if (Math.abs(this.lastLocationUpdateTime - now) >= 1000 || this.lastLocationUpdateTime === undefined) {
+			await App.firebase.getQuery(['crews', this.getCrewCode()], ['members', this.getUserId()]).update({
+				lon: position.coords.longitude,
+				lat: position.coords.latitude,
+			});
+		}
+		this.lastLocationUpdateTime = now;
+	}
+
+	updateLocationLocally(lon, lat) {
+		// locally
+		this.crew.members[this.getUserId()].location = { lon, lat };
 	}
 
 	/*
@@ -223,11 +359,28 @@ class Player {
 		return App.localStorage.getItem('crewCode');
 	}
 
+	getLocation() {
+		const members = this.crew.getMembers();
+		return members[this.getUserId()].location;
+	}
+
 	crewExists() {
 		if (this.crew === undefined) {
 			return false;
 		}
 		return true;
+	}
+
+	isTagger() {
+		const taggers = this.crew.getTaggers();
+		if (taggers.includes(this.getUserId())) {
+			return true;
+		}
+		return false;
+	}
+
+	async isModerator() {
+		return (this.getUserId() === await this.crew.getModerator());
 	}
 }
 

@@ -118,7 +118,7 @@ class Backend {
 		});
 
 		// delete userId in crewMembers
-		const crewDoc = await App.firebase.getQuery(['crews', crewCode], [userId]).delete();
+		const crewDoc = await App.firebase.getQuery(['crews', crewCode], ['members', userId]).delete();
 
 		// change captain
 		const moderator = await App.firebase.getQuery(['crews', crewCode]).get().data().moderator;
@@ -145,6 +145,26 @@ class Backend {
 		}
 	}
 
+	async addTagger(crewCode, userId) {
+		// define the new tagger array
+		const crewDoc = await App.firebase.db.collection('crews').doc(this.getCrewCode()).get();
+		const { taggers } = crewDoc.data();
+		this.oldTagger = taggers;
+		App.firebase.db.collection('crews').doc(this.getCrewCode()).update({
+			taggers: [userId],
+			previousTaggers: taggers,
+		});
+	}
+
+	async setCenterpoint(centerPoint) {
+		const crewDoc = await App.firebase.getQuery(['crews', this.getCrewCode()]).get();
+		const { gameSettings } = crewDoc.data();
+		gameSettings.centerPoint = centerPoint;
+		await App.firebase.getQuery(['crews', this.getCrewCode()]).update({
+			gameSettings,
+		});
+	}
+
 	/*
 		DATASEEDER
 	*/
@@ -158,11 +178,17 @@ class Backend {
 	}
 
 	async simulateGame() {
+		// set simulation to tru in DB
+		const crewQuery = App.firebase.getQuery(['crews', this.getCrewCode()]);
+		await crewQuery.update({
+			simulating: true,
+		});
 		let step = 0;
+
+		await this.setCenterpoint(walkingCoordinates.routes[0][0]);
 		const interval = setInterval(async () => {
 			// get crewMemberIds
 			const backCrewCode = this.getCrewCode();
-			console.log(this.getCrewCode());
 			const members = await App.firebase.getDocIds(['crews', backCrewCode], ['members']);
 			// set init location of members
 			if (step === 0) {
@@ -170,16 +196,24 @@ class Backend {
 				this.changeLocationOfCrewMember(members[1], 1, 0);
 			}
 			// let first member tag second member
-			if (step <= 27) {
+			if (step <= 28) {
 				this.changeLocationOfCrewMember(members[0], 0, step);
+				this.changeLocationOfCrewMember(members[1], 1, 0);
 			}
-			if (step <= 73 && step > 26) {
-				this.changeLocationOfCrewMember(members[1], 1, step - 26);
+			if (step <= 73 && step > 28) {
+				this.changeLocationOfCrewMember(members[1], 1, step - 28);
+			}
+			if (step >= 30 && step < 35) {
+				this.changeLocationOfCrewMember(members[0], 0, step - 30);
 			}
 			console.log('updated location in db');
 
 			// check for step limit
 			if (step === 73) {
+				// set simulation to false in DB
+				await crewQuery.update({
+					simulating: false,
+				});
 				clearInterval(interval);
 			}
 			// update stepNumber

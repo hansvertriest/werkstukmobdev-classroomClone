@@ -1,15 +1,17 @@
 <div class="o-app-container">
-	<div class="a-back-icon" id="{{backBtnId}}" style="background-image: url(../../assets/icons/fontawesome/chevron-left-solid.svg); width: 20px; height:20px; background-size: cover;"></div>
+	<img class="a-back-icon" id="{{backBtnId}}" src="../assets/icons/fontawesome/chevron-left-solid.svg"></img>
+	<div>
 	<h1 class="a-h1" id="btn">Your space crew</h1>
 	<div class="m-navbar">
-		<div class="a-navbar__invite a-navbar__invite--active" id={{navIdInvite}}>Invite Friends</div>
+		<div class="a-navbar__invite " id={{navIdInvite}}>Invite Friends</div>
 		<div class="a-navbar__overview a-navbar__overview--active" id={{navIdOverview}}>Crew Overview</div>
 		<div class="a-navbar__settings" id={{navIdSettings}}>Gameplay</div>
+	</div>
 	</div>
 	{{#with data}}
 	{{> crewListScreen }}
 	{{/with}}
-	<div class="m-playButton" id="{{ playBtnId }}">
-		<div class="a-leave-icon"  style="background-image: url(../../assets/icons/fontawesome/{{playBtnIcon}}.svg); width: 64px; height:64px; background-size: cover;"></div>
+	<div class="m-playButton">
+		<img class="a-leave-icon" id="{{ playBtnId }}"  src="../assets/icons/fontawesome/play-solid.svg"></img>
 	</div>
 </div>

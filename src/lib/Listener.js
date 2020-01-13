@@ -14,8 +14,9 @@ class EventController {
 		firebase onsnapshot
 	*/
 
-	onSnapshot(query, callback) {
-		return query.onSnapshot(callback);
-	}
+	// Deprecated because this removes the ability to unsubscribe from listener
+	// onSnapshot(query, callback) {
+	// 	query.onSnapshot(callback);
+	// }
 }
 export default new EventController();

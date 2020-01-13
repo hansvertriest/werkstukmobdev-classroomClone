@@ -14,3 +14,25 @@ h1 {
 	letter-spacing: 0.05em;
 	text-shadow: 0 4px 4px rgba(0, 0, 0, 0.35);
 }
+
+h2 {
+	font-family: "VT323";
+	font-style: normal;
+	font-weight: 400;
+	font-size: $font-size-md;
+	line-height: 30px;
+	text-align: center;
+	text-shadow: 0 4px 4px rgba(0, 0, 0, 0.35);
+	color: $near-white;
+	width: 90%;
+}
+
+p {
+	font-family: "Roboto";
+	font-style: normal;
+	font-weight: 400;
+	font-size: $font-size-small;
+	line-height: 21px;
+	color: $near-white;
+	text-align: center;
+}

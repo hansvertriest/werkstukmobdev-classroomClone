@@ -64,7 +64,7 @@ const pageScript = async () => {
 	data.members.forEach((member) => {
 		const id = `a-delete-${member.userId}`;
 		Listener.onClick(id, () => {
-			Backend.deleteUserFromCrew(Backend.crewCode, member.userId);
+			Backend.deleteUserFromCrew(Backend.getCrewCode(), member.userId);
 		});
 	});
 
@@ -92,7 +92,7 @@ const pageScript = async () => {
 export default async () => {
 	// check for change in members
 	const memberQuery = App.firebase.getQuery(['crews', Backend.getCrewCode()], ['members']);
-	Listener.onSnapshot(memberQuery, async () => {
+	memberQuery.onSnapshot(async () => {
 		pageScript();
 	});
 };
