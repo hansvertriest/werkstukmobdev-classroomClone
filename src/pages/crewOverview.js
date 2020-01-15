@@ -1,6 +1,7 @@
 import App from '../lib/App';
 import Page from '../lib/Page';
 import Player from '../lib/Player';
+import Notifications from '../lib/Notifications';
 import Listener from '../lib/Listener';
 
 const crewOverviewTemplate = require('../templates/crewOverview.hbs');
@@ -57,12 +58,12 @@ export default async () => {
 			const { gameSettings, taggers } = crewDoc.data();
 			if (gameSettings.inGame) {
 				if (!taggers.includes(Player.getUserId())) {
-					console.log('loading gps');
 					await Player.getLocationFromGps()
 						.then(async (location) => {
 							await Player.updateLocation(location);
 							gameStartListener();
 							memberListener();
+							Notifications.sentNotification('Game started!');
 							Page.goTo('game');
 						})
 						.catch((error) => {

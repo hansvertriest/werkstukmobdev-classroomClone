@@ -198,9 +198,14 @@ class Backend {
 			// let first member tag second member
 			if (step <= 28) {
 				this.changeLocationOfCrewMember(members[0], 0, step);
-				this.changeLocationOfCrewMember(members[1], 1, 0);
+				if (step % 2 === 0) {
+					this.changeLocationOfCrewMember(members[1], 1, 0);
+				} else {
+					this.changeLocationOfCrewMember(members[1], 1, 1);
+				}
 			}
 			if (step <= 73 && step > 28) {
+				this.changeLocationOfCrewMember(members[0], 0, step - 1);
 				this.changeLocationOfCrewMember(members[1], 1, step - 28);
 			}
 			if (step >= 30 && step < 35) {

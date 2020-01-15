@@ -74,7 +74,7 @@ export default async () => {
 					await Player.updateLocation(position);
 					await Player.crew.loadTaggers();
 					const taggers = Player.crew.getTaggers();
-					if (taggers.includes(Player.getUserId())) {
+					if (Player.isTagger()) {
 						Page.goTo('gameStart');
 					} else {
 						Page.goTo('game');

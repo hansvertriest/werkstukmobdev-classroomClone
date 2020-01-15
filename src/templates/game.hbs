@@ -10,9 +10,9 @@
 	</div>
 	<div class="o-header__right">
 		{{!-- <div class="m-right__buttonMsg" id="{{buttonMsgId}}"><div class="a-buttonMsg_icon" style="background-image: url(../../assets/icons/fontawesome/comment-dots-regular.svg); width: 32px; height:32px; background-size: cover;"></div></div> --}}
-
+		{{#if isNotModerator}}
 		<div class="m-right__buttonCrew" id="{{buttonMsgId}}"><p class="a-buttonCrew_text" > Crew</p></div>
-
+		{{/if}}
 		{{#if isModerator}}
 			<div class="m-right__buttonSettings" id="{{buttonSettingsId}}"><img class="a-buttonSettings_icon" src="../assets/icons/fontawesome/cog-solid.svg"></img></div>
 		{{/if}}

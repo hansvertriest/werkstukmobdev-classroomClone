@@ -25,11 +25,28 @@ export default class Crew {
 		this.gameSettings = gameSettings;
 	}
 
+	async uploadSettings(duration, radius, gameMode = 'parasite') {
+		this.setSettings(duration, radius, gameMode);
+		await App.firebase.getQuery(['crews', this.crewCode]).update({
+			gameSettings: this.getSettings(),
+			taggers: this.getTaggers(),
+		});
+	}
+
 	async loadTaggers() {
 		const crewDoc = await App.firebase.getQuery(['crews', this.crewCode]).get();
 		const { taggers, previousTaggers } = crewDoc.data();
 		this.taggers = taggers;
 		this.previousTaggers = previousTaggers;
+	}
+
+	arrayEqualsTaggers(array) {
+		const taggers = this.getTaggers();
+		const newArray = array.filter((element) => taggers.includes(element));
+		if (newArray.length === 0) {
+			return false;
+		}
+		return true;
 	}
 
 	async loadGameSettings() {

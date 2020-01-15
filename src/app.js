@@ -47,6 +47,11 @@ const initRoutes = () => {
 window.addEventListener('load', async () => {
 	// init the app
 	initApp();
+
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.register('sw.js');
+	}
+
 	// check user
 	await App.firebase.getAuth().onAuthStateChanged(async (user) => {
 		if (!user) {
@@ -57,7 +62,6 @@ window.addEventListener('load', async () => {
 			console.log(`USER: ${user.uid}`);
 
 			await Player.load(user.uid, true);
-			console.log('aa');
 			// init the routes
 			initRoutes();
 			// route to the requested location (or default)

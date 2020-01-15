@@ -1,6 +1,5 @@
 import App from '../lib/App';
 import listener from '../lib/Listener';
-import Player from '../lib/Player';
 
 const loginTemplate = require('../templates/login.hbs');
 

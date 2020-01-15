@@ -3,11 +3,27 @@ import Page from '../lib/Page';
 import Listener from '../lib/Listener';
 import Player from '../lib/Player';
 import Mapbox from '../lib/core/MapBox';
+import Notifications from '../lib/Notifications';
 
 const gameTemplate = require('../templates/game.hbs');
 
+const unsubscribeListeners = (listenerArray) => {
+	listenerArray.forEach((listener) => {
+		listener();
+	});
+};
+
 export default async () => {
+	const listeners = [];
+
+	Notifications.sentNotification('Game started!');
+
+	// load game data
+	await Player.crew.loadGameSettings();
+	await Player.crew.loadTaggers();
+
 	/* Dom variables */
+	const isModerator = await Player.isModerator();
 	const buttonMsgId = 'buttonMsg';
 	const buttonCrewId = 'buttonCrew';
 	const buttonSettingsId = 'buttonSettings';
@@ -15,8 +31,8 @@ export default async () => {
 	const timerId = 'timer';
 
 	App.render(gameTemplate({
-		isModerator: (await Player.crew.getModerator() === Player.getUserId()),
-		isNotModerator: (!await Player.crew.getModerator() === Player.getUserId()),
+		isModerator,
+		isNotModerator: !isModerator,
 		isNotTagger: (!Player.crew.getTaggers().includes(Player.getUserId())),
 		isTagger: (Player.crew.getTaggers().includes(Player.getUserId())),
 		buttonMsgId,
@@ -26,9 +42,6 @@ export default async () => {
 		timerId,
 	}));
 	App.router.navigate('/game');
-
-	// load game settings
-	await Player.crew.loadGameSettings();
 	const map = new Mapbox('pk.eyJ1IjoibWlnaHR5YmlpaXkiLCJhIjoiY2s1NDM0NnhrMGRzcTNqb2ZoMXJ2cWNwdyJ9.eQxl50P8hC0WzG7bv7G4CQ');
 
 	// set map points
@@ -98,9 +111,11 @@ export default async () => {
 			});
 		});
 
+		listeners.push(locationListener);
+
 		// check steps for when in simulate mode
 		const memberDoc = App.firebase.getQuery(['crews', Player.getCrewCode()], ['members', Player.getUserId()]);
-		memberDoc.onSnapshot(async (doc) => {
+		const gameListener = memberDoc.onSnapshot(async (doc) => {
 			if (Player.crew.isSimulating()) {
 				const { lon, lat } = doc.data();
 
@@ -134,6 +149,7 @@ export default async () => {
 				// check if has tagged
 				if (Player.isTagger()) {
 					await Player.checkIfPlayerHasTagged();
+					Notifications.sentNotification('We sensed you tagged someone!');
 				} else {
 					const { distance } = Player.getDistanceToTaggers();
 					Page.changeInnerText('distance', `${Math.floor(distance * 1000)}m`);
@@ -148,10 +164,9 @@ export default async () => {
 				map.goToCoords(lon, lat);
 			}
 		});
-	});
 
-	// listeners
-	let crewDocListener;
+		listeners.push(gameListener);
+	});
 
 	// set timer
 	const timerInterval = setInterval(async () => {
@@ -167,13 +182,19 @@ export default async () => {
 		} else if (secondsLeft !== 0) {
 			minutesLeft -= 1;
 		}
+		if (String(secondsLeft).length === 1) {
+			secondsLeft = `0${secondsLeft}`;
+		}
 		if (minutesLeft < 0) {
 			// stop game
-			crewDocListener();
-			locationListener();
+			unsubscribeListeners(listeners);
 			clearInterval(timerInterval);
 			await Player.crew.stopGame();
-			Page.goTo('home');
+			if (Player.isTagger()) {
+				Page.goTo('parasiteLose');
+			} else {
+				Page.goTo('parasiteWin');
+			}
 		}
 		Page.changeInnerText(timerId, `${minutesLeft}:${secondsLeft}`);
 	}, 1000);
@@ -181,9 +202,9 @@ export default async () => {
 
 	await Player.crew.loadTaggers();
 
-	// listen for game end and change in tagger
+	// listen for game changes
 	const crewQuery = App.firebase.getQuery(['crews', Player.getCrewCode()]);
-	crewDocListener = crewQuery.onSnapshot(async (doc) => {
+	const crewDocListener = crewQuery.onSnapshot(async (doc) => {
 		const {
 			gameSettings,
 			taggers,
@@ -202,18 +223,25 @@ export default async () => {
 
 		const taggersLocal = Player.crew.getTaggers();
 		// get change in tagger
-		if (taggers !== taggersLocal) {
-			// Page.goTo('game');
-			// change taggers
+		if (!Player.crew.arrayEqualsTaggers(taggers)) {
+			Notifications.sentNotification('We sensed you tagged someone!');
+			console.log(taggers, taggersLocal);
 			Player.crew.setTaggers(taggers);
-			if (map.getMap().style.loaded()) {
-				// remove all points on the map
-				const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
-				memberLayers.forEach((member) => {
-					map.removePoint(member);
-				});
+			clearInterval(timerInterval);
+			unsubscribeListeners(listeners);
+			if (Player.isTagger()) {
+				Page.goTo('gameStart');
+			} else {
+				Page.goTo('game');
 			}
-			// clearInterval(timerInterval);
+			// // change taggers
+			// if (map.getMap().style.loaded()) {
+			// 	// remove all points on the map
+			// 	const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
+			// 	memberLayers.forEach((member) => {
+			// 		map.removePoint(member);
+			// 	});
+			// }
 		}
 
 		// change in gameSettings
@@ -231,10 +259,14 @@ export default async () => {
 
 		// check the tag request
 		if (tagRequest === Player.getUserId()) {
+			unsubscribeListeners(listeners);
 			clearInterval(timerInterval);
 			Page.goTo('taggedConfirm');
 		}
 	});
+
+
+	listeners.push(crewDocListener);
 
 	// listen to gps
 	navigator.geolocation.watchPosition(
@@ -299,15 +331,17 @@ export default async () => {
 	*/
 
 	// if moderator add the go to settings listener
-	if (await Player.isModerator()) {
+	if (isModerator) {
 		Listener.onClick(buttonSettingsId, () => {
+			unsubscribeListeners(listeners);
 			Page.goTo('createOverview');
 			clearInterval(timerInterval);
 		});
 	}
 
-	if (!await Player.isModerator()) {
+	if (!isModerator) {
 		Listener.onClick(buttonCrewId, () => {
+			unsubscribeListeners(listeners);
 			Page.goTo('crewOverview');
 			clearInterval(timerInterval);
 		});

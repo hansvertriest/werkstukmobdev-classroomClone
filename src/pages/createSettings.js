@@ -68,13 +68,22 @@ export default async () => {
 	*/
 
 	// navigation
-	Listener.onClick(navIdInvite, () => {
+	Listener.onClick(navIdInvite, async () => {
+		const duration = parseInt(document.getElementById(durationFieldId).value, 10);
+		const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
+		Player.crew.uploadSettings(duration, radius);
 		Page.goTo('createInvite');
 	});
-	Listener.onClick(navIdOverview, () => {
+	Listener.onClick(navIdOverview, async () => {
+		const duration = parseInt(document.getElementById(durationFieldId).value, 10);
+		const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
+		Player.crew.uploadSettings(duration, radius);
 		Page.goTo('createOverview');
 	});
-	Listener.onClick(navIdSettings, () => {
+	Listener.onClick(navIdSettings, async () => {
+		const duration = parseInt(document.getElementById(durationFieldId).value, 10);
+		const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
+		Player.crew.uploadSettings(duration, radius);
 		Page.goTo('createSettings');
 	});
 
@@ -93,11 +102,9 @@ export default async () => {
 		if (Player.crew.isInGame()) {
 			Page.goTo('game');
 		} else {
-			// get settings
 			const duration = parseInt(document.getElementById(durationFieldId).value, 10);
 			const radius = parseInt(document.getElementById(radiusFieldId).value, 10);
-			// set settings
-			Player.crew.setSettings(duration, radius, gameMode);
+			Player.crew.uploadSettings(duration, radius);
 			// got to last page
 			Page.goTo('home');
 		}

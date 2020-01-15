@@ -1,6 +1,7 @@
 // import babel polyfill
 require('@babel/polyfill');
 
+
 // import libraries to help configure the webpack config
 const path = require('path');
 const webpack = require('webpack');
@@ -11,6 +12,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ServiceWorkerWebpackPlugin = require('serviceworker-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const chalk = require('chalk');
+const WebpackPwaManifest = require('webpack-pwa-manifest');
 
 module.exports = (env, argv) => {
 	// check if we are in development mode or not
@@ -96,6 +98,7 @@ module.exports = (env, argv) => {
 
 		// define the plugins
 		plugins: [
+
 			new webpack.LoaderOptionsPlugin({
 				options: {
 					handlebarsLoader: {},
@@ -111,6 +114,19 @@ module.exports = (env, argv) => {
 					removeEmptyElements: true,
 				},
 			}),
+
+			new WebpackPwaManifest({
+				filename: 'manifest.json',
+				name: 'Space Infection',
+				short_name: 'Space',
+				description: 'Run away from the alien before it infects you!',
+				background_color: '#0E272D',
+				crossorigin: 'use-credentials',
+				display: 'standalone',
+				inject: true,
+				includeDirectory: true,
+			}),
+
 			new MiniCssExtractPlugin({
 				filename: dev ? '[name].css' : '[name].[hash].css',
 				chunkFilename: dev ? '[id].css' : '[id].[hash].css',

@@ -113,7 +113,7 @@ export default async () => {
 						await Player.crew.loadTaggers();
 						const taggers = Player.crew.getTaggers();
 						memberListener();
-						if (taggers.includes(Player.getUserId())) {
+						if (Player.isTagger()) {
 							Page.goTo('gameStart');
 						} else {
 							Page.goTo('game');

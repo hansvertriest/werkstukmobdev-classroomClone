@@ -87,7 +87,6 @@ class Player {
 
 			// join locally
 			this.crew = new Crew(crewCode);
-			console.log('tt');
 
 			// join in the cloud
 			await App.firebase.getQuery(['crews', crewCode], ['members', this.getUserId()]).set({
@@ -293,7 +292,7 @@ class Player {
 						reject(error);
 					},
 					{
-						// enableHighAccuracy: true,
+						enableHighAccuracy: true,
 						timeout: 10000,
 					},
 				);

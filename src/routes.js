@@ -18,6 +18,9 @@ import Backcrewdetail from './pages/backCrewDetail';
 import Connectionlost from './pages/connectionLost';
 import Taggedparasite from './pages/taggedParasite';
 import Taggedconfirm from './pages/taggedConfirm';
+import Parasitewin from './pages/parasiteWin';
+import Parasitelose from './pages/parasiteLose';
+import Offline from './pages/offline';
 
 export default [
 	{ path: '/backCrewList', view: Backcrewlist },
@@ -38,5 +41,8 @@ export default [
 	{ path: '/connectionLost', view: Connectionlost },
 	{ path: '/taggedParasite', view: Taggedparasite },
 	{ path: '/taggedConfirm', view: Taggedconfirm },
+	{ path: '/parasiteWin', view: Parasitewin },
+	{ path: '/parasiteLose', view: Parasitelose },
+	{ path: '/offline', view: Offline },
 	{ path: '/registerAvatar', view: Registeravatar },
 ];

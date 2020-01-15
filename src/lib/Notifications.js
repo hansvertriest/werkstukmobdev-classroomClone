@@ -13,8 +13,13 @@ class Notifications {
 	}
 
 	sentNotification(text) {
-		const img = '../../assets/images/avatar/astro1_64.png';
-		const notification = new Notification('To do list', { body: text, icon: img });
+		Notification.requestPermission((result) => {
+			if (result === 'granted') {
+				navigator.serviceWorker.ready.then((registration) => {
+					registration.showNotification(text);
+				});
+			}
+		});
 	}
 }
 
