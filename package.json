@@ -20,7 +20,7 @@
     "JS",
     "Vanilla"
   ],
-  "author": "Artevelde University College Ghent",
+  "author": "Hans Vertriest",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.6.0",
