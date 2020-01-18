@@ -14,7 +14,6 @@ class Page {
 		}
 		this.currentPage = pageName;
 		App.router.navigate(`/${pageName}`);
-		console.log(this.currentPage);
 	}
 
 	goToLastPage() {

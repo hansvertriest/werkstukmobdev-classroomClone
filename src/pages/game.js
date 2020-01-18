@@ -3,7 +3,6 @@ import Page from '../lib/Page';
 import Listener from '../lib/Listener';
 import Player from '../lib/Player';
 import Mapbox from '../lib/core/MapBox';
-import Notifications from '../lib/Notifications';
 
 const gameTemplate = require('../templates/game.hbs');
 
@@ -28,11 +27,13 @@ export default async () => {
 	const mapId = 'map';
 	const timerId = 'timer';
 
+	const isTagger = !Player.crew.getTaggers().includes(Player.getUserId());
+
 	App.render(gameTemplate({
 		isModerator,
 		isNotModerator: !isModerator,
-		isNotTagger: (!Player.crew.getTaggers().includes(Player.getUserId())),
-		isTagger: (Player.crew.getTaggers().includes(Player.getUserId())),
+		isTagger,
+		isNotTagger: !isTagger,
 		buttonMsgId,
 		buttonCrewId,
 		buttonSettingsId,
@@ -93,7 +94,6 @@ export default async () => {
 							// set tagger
 							map.setPointColor(member.userId);
 						} else if (member.userId !== Player.getUserId() && Player.isTagger()) {
-							console.log('member');
 							map.changeData(member.userId, {
 								type: 'Point',
 								coordinates: [member.data.lon, member.data.lat],
@@ -147,11 +147,12 @@ export default async () => {
 				// check if has tagged
 				if (Player.isTagger()) {
 					await Player.checkIfPlayerHasTagged();
-					Notifications.sentNotification('We sensed you tagged someone!');
 				} else {
 					const { distance } = Player.getDistanceToTaggers();
 					Page.changeInnerText('distance', `${Math.floor(distance * 1000)}m`);
 				}
+
+				// DISABLED BECAUSE IT BREAKS THE DATASEEDER
 				// check if out of zone
 				// const outOfZone = Player.checkIfOutOfZone();
 				// if (outOfZone) {
@@ -219,11 +220,8 @@ export default async () => {
 			locationListener();
 		}
 
-		const taggersLocal = Player.crew.getTaggers();
 		// get change in tagger
 		if (!Player.crew.arrayEqualsTaggers(taggers)) {
-			Notifications.sentNotification('We sensed you tagged someone!');
-			console.log(taggers, taggersLocal);
 			Player.crew.setTaggers(taggers);
 			clearInterval(timerInterval);
 			unsubscribeListeners(listeners);
@@ -232,14 +230,6 @@ export default async () => {
 			} else {
 				Page.goTo('game');
 			}
-			// // change taggers
-			// if (map.getMap().style.loaded()) {
-			// 	// remove all points on the map
-			// 	const memberLayers = map.getMemberLayers(Player.crew.getMemberIds());
-			// 	memberLayers.forEach((member) => {
-			// 		map.removePoint(member);
-			// 	});
-			// }
 		}
 
 		// change in gameSettings
@@ -299,6 +289,7 @@ export default async () => {
 						map.setPointColor(Player.getUserId());
 					}
 
+					// DISABLED BECAUSE IT BREAKS THE DATASEEDER
 					// check if out of zone
 					// const outOfZone = await Player.checkIfOutOfZone();
 					// if (outOfZone) {

@@ -73,7 +73,6 @@ const pageScript = async () => {
 		const id = `a-addTagger-${member.userId}`;
 		Listener.onClick(id, () => {
 			Backend.addTagger(Backend.crewCode, member.userId);
-			console.log('ee');
 		});
 	});
 

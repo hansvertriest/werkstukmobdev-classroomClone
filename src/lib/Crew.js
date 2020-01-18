@@ -167,8 +167,6 @@ export default class Crew {
 
 	async addTagger(taggerId) {
 		this.taggers.push(taggerId);
-		console.log(this.taggers);
-		console.log(taggerId);
 		await App.firebase.getQuery(['crews', this.crewCode]).update({
 			taggers: this.taggers,
 		});
@@ -186,7 +184,6 @@ export default class Crew {
 
 	async setTagRequest(userId) {
 		const crewQuery = App.firebase.getQuery(['crews', this.crewCode]);
-		console.log(userId);
 		await crewQuery.update({
 			tagRequest: userId,
 		});
@@ -201,7 +198,6 @@ export default class Crew {
 
 	async startGame(centerPoint) {
 		// start game locally
-		console.log(centerPoint);
 		this.gameSettings.inGame = true;
 		this.gameSettings.centerPoint = [centerPoint.coords.longitude, centerPoint.coords.latitude];
 		this.gameSettings.startDate = new Date();

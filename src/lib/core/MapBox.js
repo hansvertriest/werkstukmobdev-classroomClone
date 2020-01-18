@@ -48,7 +48,6 @@ class MapBox {
 	}
 
 	addPoint(source, coordinates) {
-		console.log(source);
 		this.getMap().addSource(source, {
 			type: 'geojson',
 			data: {
@@ -105,7 +104,6 @@ class MapBox {
 			// check if all frames have been updated
 			if (currentFrame === framesAmount) {
 				clearInterval(interval);
-				console.log('step done');
 			}
 			// add to curretnframe
 			currentFrame++;

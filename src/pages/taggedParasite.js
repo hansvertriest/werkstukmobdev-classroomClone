@@ -1,10 +1,15 @@
 import App from '../lib/App';
+import Listener from '../lib/Listener';
 
 const taggedParasiteTemplate = require('../templates/taggedParasite.hbs');
 
 export default () => {
-	const title = 'taggedParasite automatic';
+	const toGameBtnId = 'toGameBtn';
 
-	App.render(taggedParasiteTemplate({ title }));
+	App.render(taggedParasiteTemplate({ toGameBtnId }));
 	App.router.navigate('/taggedParasite');
+
+	Listener.onClick(toGameBtnId, () => {
+		App.router.navigate('game');
+	});
 };

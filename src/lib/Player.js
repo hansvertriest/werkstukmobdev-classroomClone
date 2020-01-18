@@ -245,6 +245,7 @@ class Player {
 		const taggerObj = this.getDistanceToTaggers();
 		if (taggerObj.distance < 0.01) {
 			// TODO implement not tagging back
+			Notifications.sentNotification('We sensed you tagged someone!');
 			await this.crew.setTagRequest(this.getUserId());
 			// await this.crew.changeTaggersTo([this.getUserId()]);
 		}
@@ -253,7 +254,6 @@ class Player {
 	async checkIfPlayerHasTagged() {
 		const member = this.getDistanceToMembers();
 		if (member.distance < 0.01 && !this.crew.getPreviousTaggers().includes(member.userId)) {
-			console.log(member);
 			await this.crew.setTagRequest(member.userId);
 		}
 	}

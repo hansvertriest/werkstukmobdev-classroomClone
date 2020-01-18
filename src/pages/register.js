@@ -46,7 +46,6 @@ export default () => {
 				App.router.navigate('/registerAvatar');
 			})
 			.catch((error) => {
-				// console.log(error.message);
 				document.getElementById(errorContainerId).innerText = error.message;
 			});
 	});

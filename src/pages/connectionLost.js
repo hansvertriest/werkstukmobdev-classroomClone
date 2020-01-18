@@ -14,7 +14,6 @@ export default () => {
 
 	// tap anywhere
 	Listener.onClick(containerId, () => {
-		console.log('Going to lastpage');
 		Page.goToLastPage();
 	});
 };
