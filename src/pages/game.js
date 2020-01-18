@@ -16,8 +16,6 @@ const unsubscribeListeners = (listenerArray) => {
 export default async () => {
 	const listeners = [];
 
-	Notifications.sentNotification('Game started!');
-
 	// load game data
 	await Player.crew.loadGameSettings();
 	await Player.crew.loadTaggers();
